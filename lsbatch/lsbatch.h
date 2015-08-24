@@ -904,6 +904,13 @@ struct jobrequeue {
 #define    MBD_RECONFIG      1
 #define    MBD_CKCONFIG      2
 
+/* Data structure describing batch resource.
+ */
+struct batchRes {
+    char *name;
+    int value;
+};
+
 struct logSwitchLog {
     int lastJobId;
 };

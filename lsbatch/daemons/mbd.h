@@ -783,6 +783,11 @@ struct resourceInstance {
     char      *value;
 };
 
+struct batch_res {
+    char *name;
+    int value;
+};
+
 struct profileCounters {
     int cntVal;
     char *cntDescr;
@@ -1390,6 +1395,7 @@ extern int                  checkResources (struct resourceInfoReq *,
 extern struct sharedResource *getResource (char *);
 extern void                 resetSharedResource(void);
 extern void                 updSharedResourceByRUNJob(const struct jData*);
+extern int                  add_batch_resv(struct batchRes *, struct lsfAuth *);
 extern int                  sharedResourceUpdFactor;
 extern void                 freeSharedResource(void);
 extern void                 newPRMO(char *);

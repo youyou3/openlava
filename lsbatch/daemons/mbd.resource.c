@@ -32,6 +32,7 @@ static void initHostInstances (int);
 static int copyResource (struct lsbShareResourceInfoReply *, struct sharedResource *, char *);
 
 struct objPRMO *pRMOPtr = NULL;
+static hTab *MBDres;
 
 static void initQPRValues(struct qPRValues *, struct qData *);
 static void freePreemptResourceInstance(struct preemptResourceInstance *);
@@ -65,6 +66,11 @@ getLsbResourceInfo(void)
     resourceInfo = ls_sharedresourceinfo(NULL, &numRes, NULL, 0);
     if (resourceInfo == NULL) {
         return;
+    }
+
+    if (MBDres == NULL) {
+        MBDres = calloc(1, sizeof(hTab));
+        h_initTab_(MBDres, 11);
     }
 
     if (numResources > 0)
@@ -727,6 +733,39 @@ get_group_slots(struct gData *gPtr)
               gPtr->group_slots, slots);
 
     return slots;
+}
+
+/* add_batch_resv()
+ */
+int
+add_batch_resv(struct batchRes *res, struct lsfAuth *auth)
+{
+    struct batch_res *rsv;
+    hEnt *ent;
+    int new;
+
+    ent = h_addEnt_(MBDres, res->name, &new);
+    if (new) {
+
+        rsv = calloc(1, sizeof(struct batch_res));
+        rsv->name = strdup(res->name);
+        rsv->value = res->value;
+        ent->hData = rsv;
+
+        ls_syslog(LOG_DEBUG, "\
+%s: adding new batch resource name %s value %d", __func__,
+                  rsv->name, rsv->value);
+    } else {
+
+        rsv = ent->hData;
+        rsv->value = res->value;
+
+        ls_syslog(LOG_DEBUG, "\
+%s: updating existing resource name %s value %d", __func__,
+                  rsv->name, rsv->value);
+    }
+
+    return LSBE_NO_ERROR;
 }
 
 static void

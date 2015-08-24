@@ -1941,3 +1941,15 @@ xdr_lsbMsg(XDR *xdrs,
 
     return true;
 }
+
+bool_t
+xdr_batchRes(XDR *xdrs,
+             struct batchRes *res,
+             struct LSFHeader *hdr)
+{
+    if (! xdr_wrapstring(xdrs, &res->name)
+        || ! xdr_int(xdrs, &res->value))
+        return false;
+
+    return true;
+}

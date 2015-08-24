@@ -159,3 +159,7 @@ extern bool_t xdr_shareAcct(XDR *,
 extern bool_t xdr_jobID(XDR *,
                         LS_LONG_INT *,
                         struct LSFHeader *);
+
+extern bool_t xdr_batchRes(XDR *,
+                           struct batchRes *,
+                           struct LSFHeader *);
