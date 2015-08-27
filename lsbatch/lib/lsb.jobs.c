@@ -472,9 +472,7 @@ lsb_runjob(struct runJobRequest* runJobRequest)
         return -1;
     }
 
-
     xdr_destroy(&xdrs);
-
 
     lsberrno = lsfHeader.opCode;
 

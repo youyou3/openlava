@@ -22,7 +22,7 @@
 
 #include "lsb.h"
 
-int 
+int
 lsb_movejob (LS_LONG_INT jobId, int *position, int opCode)
 {
     struct jobMoveReq jobMoveReq;
@@ -51,12 +51,12 @@ lsb_movejob (LS_LONG_INT jobId, int *position, int opCode)
 
     if (authTicketTokens_(&auth, NULL) == -1)
 	return -1;
-	 
+
     jobMoveReq.jobId = jobId;
     jobMoveReq.position = *position;
     jobMoveReq.opCode = opCode;
 
-    
+
     mbdReqtype = BATCH_JOB_MOVE;
     xdrmem_create(&xdrs, request_buf, MSGSIZE, XDR_ENCODE);
 
@@ -65,17 +65,17 @@ lsb_movejob (LS_LONG_INT jobId, int *position, int opCode)
 	xdr_destroy(&xdrs);
 	lsberrno = LSBE_XDR;
 	return -1;
-    } 
-    
-    
-    if ((cc = callmbd (NULL, request_buf, XDR_GETPOS(&xdrs), &reply_buf, 
+    }
+
+
+    if ((cc = callmbd (NULL, request_buf, XDR_GETPOS(&xdrs), &reply_buf,
                        &hdr, NULL, NULL, NULL)) == -1)    {
 	xdr_destroy(&xdrs);
 	return -1;
     }
     xdr_destroy(&xdrs);
 
-    
+
     lsberrno = hdr.opCode;
     if (lsberrno == LSBE_NO_ERROR) {
         xdrmem_create(&xdrs, reply_buf, XDR_DECODE_SIZE_(cc), XDR_DECODE);
@@ -97,5 +97,5 @@ lsb_movejob (LS_LONG_INT jobId, int *position, int opCode)
 	free(reply_buf);
     return -1;
 
-} 
+}
 

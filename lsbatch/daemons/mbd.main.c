@@ -780,6 +780,11 @@ processClient(struct clientNode *client, int *needFree)
                    do_jobMsgInfo(&xdrs, s, &from, client->fromHost, &reqHdr, &auth),
                    "do_jobMsgInfo()");
             break;
+        case BATCH_ADD_RESV:
+            TIMEIT(0,
+                   do_bresAdd(&xdrs, s, &from, &reqHdr, &auth),
+                   "do_bresAdd()");
+            break;
         default:
             errorBack(s, LSBE_PROTOCOL, &from);
             if (reqHdr.version <= OPENLAVA_XDR_VERSION)
@@ -1031,7 +1036,8 @@ authRequest(struct lsfAuth *auth,
           || reqType == BATCH_JOB_FORCE
           || reqType == BATCH_SET_JOB_ATTR
           || reqType == BATCH_JOB_MSG
-          || reqType == BATCH_JOBMSG_INFO))
+          || reqType == BATCH_JOBMSG_INFO
+          || reqType == BATCH_ADD_RESV))
         return LSBE_NO_ERROR;
 
     if (!xdr_lsfAuth(xdrs, auth, reqHdr)) {

@@ -29,7 +29,8 @@ static void addSharedResource (struct lsSharedResourceInfo *);
 static void addInstances (struct lsSharedResourceInfo *, struct sharedResource *);
 static void freeHostInstances (void);
 static void initHostInstances (int);
-static int copyResource (struct lsbShareResourceInfoReply *, struct sharedResource *, char *);
+static int copyResource (struct lsbShareResourceInfoReply *,
+                         struct sharedResource *, char *);
 
 struct objPRMO *pRMOPtr = NULL;
 static hTab *MBDres;
@@ -51,6 +52,7 @@ checkOrTakeAvailableByPreemptPRHQValue(int index,
                                        int update);
 static void compute_group_slots(int, struct lsSharedResourceInfo *);
 static int get_group_slots(struct gData *);
+static int upd_mbd_resv(int, struct lsSharedResourceInfo *);
 
 void
 getLsbResourceInfo(void)
@@ -77,6 +79,8 @@ getLsbResourceInfo(void)
         freeSharedResource();
 
     compute_group_slots(numRes, resourceInfo);
+
+    upd_mbd_resv(numRes, resourceInfo);
 
     initHostInstances(numRes);
 
@@ -768,6 +772,37 @@ add_batch_resv(struct batchRes *res, struct lsfAuth *auth)
     return LSBE_NO_ERROR;
 }
 
+/* upd_mbd_resv()
+ */
+static int
+upd_mbd_resv(int num_res, struct lsSharedResourceInfo *res)
+{
+    int cc;
+    hEnt *ent;
+    struct batch_res *rsv;
+    char buf[128];
+
+   /* For all shared resources returned by lim
+     */
+    for (cc = 0; cc < num_res; cc++) {
+        int k;
+
+        ent = h_getEnt_(MBDres, res[cc].resourceName);
+        if (ent == NULL)
+            continue;
+
+        rsv = ent->hData;
+
+        for (k = 0; k < res->nInstances; k++) {
+            _free_(res[cc].instances[k].value);
+            sprintf(buf, "%d", rsv->value);
+            res[cc].instances[k].value = strdup(buf);
+        }
+    }
+
+    return 0;
+}
+
 static void
 initQPRValues(struct qPRValues *qPRValuesPtr, struct qData *qPtr)
 {
@@ -778,7 +813,6 @@ initQPRValues(struct qPRValues *qPRValuesPtr, struct qData *qPtr)
     qPRValuesPtr->preemptingRunJob      = 0.0;
 
     return;
-
 }
 
 

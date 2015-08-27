@@ -2933,8 +2933,8 @@ int
 do_bresAdd(XDR *xdrs,
            int chfd,
            struct sockaddr_in *from,
-           struct lsfAuth *auth,
-           struct LSFHeader *reqHeader)
+           struct LSFHeader *reqHeader,
+           struct lsfAuth *auth)
 {
     struct batchRes res;
     XDR replyXdr;
@@ -2943,9 +2943,12 @@ do_bresAdd(XDR *xdrs,
     int reply;
     int l;
 
+    res.name = calloc(128, sizeof(char));
+
     if (!xdr_batchRes(xdrs, &res, reqHeader)) {
         reply = LSBE_XDR;
         ls_syslog(LOG_ERR, "%s: xdr_runJobReq() failed", __func__);
+        _free_(res.name);
         goto Reply;
     }
 
@@ -2968,6 +2971,7 @@ Reply:
                        NULL)) {
         ls_syslog(LOG_ERR, "%s: xdr_encodeMsg() failed");
         xdr_destroy(&replyXdr);
+        _free_(res.name);
         return -1;
     }
 
@@ -2975,10 +2979,13 @@ Reply:
     if (chanWrite_(chfd, reply_buf, l) <= 0) {
         ls_syslog(LOG_ERR, "%s: chanWrite_() %d bytes failed", __func__, l);
         xdr_destroy(&replyXdr);
+        _free_(res.name);
         return -1;
     }
 
     xdr_destroy(&replyXdr);
+    _free_(res.name);
+
     return 0;
 }
 

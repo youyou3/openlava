@@ -66,8 +66,10 @@ typedef enum {
     BATCH_UNUSED_38      = 38,
     BATCH_UNUSED_39      = 39,
     BATCH_STATUS_CHUNK   = 40,
-    BATCH_JOBMSG_INFO,
+    BATCH_JOBMSG_INFO    = 41,
     BATCH_SET_JOB_ATTR   = 90,
+    BATCH_ADD_RESV       = 91,
+    BATCH_RM_RESV        = 92,
     READY_FOR_OP         = 1023,
     PREPARE_FOR_OP       = 1024
 } mbdReqType;
