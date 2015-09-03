@@ -1948,7 +1948,8 @@ xdr_batchRes(XDR *xdrs,
              struct LSFHeader *hdr)
 {
     if (! xdr_wrapstring(xdrs, &res->name)
-        || ! xdr_int(xdrs, &res->value))
+        || ! xdr_int(xdrs, &res->value)
+        || ! xdr_int(xdrs, &res->options))
         return false;
 
     return true;

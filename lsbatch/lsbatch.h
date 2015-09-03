@@ -909,7 +909,13 @@ struct jobrequeue {
 struct batchRes {
     char *name;
     int value;
+    int options;
 };
+
+/* Tell MBD to free the resources immediately,
+ * the MBD will react requeueing jobs.
+ */
+#define RES_RM_FORCE 0x01
 
 struct logSwitchLog {
     int lastJobId;
@@ -1548,6 +1554,6 @@ int getTotalSortIntList(struct sortIntList *);
 int updateJobIdIndexFile (char *, char *, int);
 
 extern int lsb_addbatchres(struct batchRes *);
-extern int lsb_rmbatchres(const char *);
+extern int lsb_rmbatchres(struct batchRes *);
 
 #endif

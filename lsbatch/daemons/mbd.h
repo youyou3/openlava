@@ -1208,6 +1208,11 @@ extern int                  do_bresAdd(XDR *,
                                        struct sockaddr_in *,
                                        struct LSFHeader *,
                                        struct lsfAuth *);
+extern int                  do_bresRm(XDR *,
+                                      int,
+                                      struct sockaddr_in *,
+                                      struct LSFHeader *,
+                                      struct lsfAuth *);
 extern void                 doNewJobReply(struct sbdNode *, int);
 extern void                 doProbeReply(struct sbdNode *, int);
 extern void                 doSignalJobReply(struct sbdNode *sbdPtr, int);

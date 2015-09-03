@@ -226,7 +226,55 @@ lsb_addbatchres(struct batchRes *rsv)
 /* lsb_rmbatchres()
  */
 int
-lsb_rmbatchres(const char *res_name)
+lsb_rmbatchres(struct batchRes *rsv)
 {
+    char request_buf[MSGSIZE];
+    char *reply_buf;
+    XDR xdrs;
+    struct lsfAuth auth;
+    struct LSFHeader hdr;
+    int cc;
+
+    if (rsv == NULL
+        || rsv->name == NULL)
+        return LSBE_BAD_ARG;
+
+    if (authTicketTokens_(&auth, NULL) == -1) {
+        lsberrno = LSBE_LSBLIB;
+        return -1;
+    }
+
+    xdrmem_create(&xdrs, request_buf, MSGSIZE, XDR_ENCODE);
+    initLSFHeader_(&hdr);
+    hdr.opCode = BATCH_RM_RESV;
+
+    if (! xdr_encodeMsg(&xdrs,
+                        (char *)rsv,
+                        &hdr,
+                        xdr_batchRes,
+                        0,
+                        &auth)) {
+        lsberrno = LSBE_XDR;
+        xdr_destroy(&xdrs);
+        return -1;
+    }
+
+    if ((cc = callmbd(NULL,
+                      request_buf,
+                      XDR_GETPOS(&xdrs),
+                      &reply_buf,
+                      &hdr,
+                      NULL,
+                      NULL,
+                      NULL)) == -1) {
+        xdr_destroy(&xdrs);
+        return -1;
+    }
+
+    xdr_destroy(&xdrs);
+
+    if (hdr.opCode != LSBE_NO_ERROR)
+        return hdr.opCode;
+
     return LSBE_NO_ERROR;
 }

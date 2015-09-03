@@ -53,6 +53,7 @@ checkOrTakeAvailableByPreemptPRHQValue(int index,
 static void compute_group_slots(int, struct lsSharedResourceInfo *);
 static int get_group_slots(struct gData *);
 static int upd_mbd_resv(int, struct lsSharedResourceInfo *);
+static int requeue_jobs_by_res(struct batchRes *, int);
 
 void
 getLsbResourceInfo(void)
@@ -747,6 +748,7 @@ add_batch_resv(struct batchRes *res, struct lsfAuth *auth)
     struct batch_res *rsv;
     hEnt *ent;
     int new;
+    int num;
 
     ent = h_addEnt_(MBDres, res->name, &new);
     if (new) {
@@ -759,15 +761,29 @@ add_batch_resv(struct batchRes *res, struct lsfAuth *auth)
         ls_syslog(LOG_DEBUG, "\
 %s: adding new batch resource name %s value %d", __func__,
                   rsv->name, rsv->value);
-    } else {
+        return LSBE_NO_ERROR;
 
-        rsv = ent->hData;
-        rsv->value = res->value;
+    }
+
+    rsv = ent->hData;
+    if (res->value >= rsv->value) {
 
         ls_syslog(LOG_DEBUG, "\
-%s: updating existing resource name %s value %d", __func__,
-                  rsv->name, rsv->value);
+%s: adding existing resource name %s prev %d current %d", __func__,
+                  rsv->name, rsv->value, res->value);
+        rsv->value = res->value;
+
+        return LSBE_NO_ERROR;
     }
+
+    num = rsv->value - res->value;
+    ls_syslog(LOG_DEBUG, "\
+%s: removing existing resource name %s prev %d current %d options %d",
+              __func__, rsv->name, rsv->value, res->value, res->options);
+
+
+    if (res->options & RES_RM_FORCE)
+        requeue_jobs_by_res(res, num);
 
     return LSBE_NO_ERROR;
 }
@@ -800,6 +816,14 @@ upd_mbd_resv(int num_res, struct lsSharedResourceInfo *res)
         }
     }
 
+    return 0;
+}
+
+/* requeue_jobs_by_res()
+ */
+int
+requeue_jobs_by_res(struct batchRes *res, int num)
+{
     return 0;
 }
 

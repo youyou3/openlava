@@ -9,7 +9,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/lsf  -I$(top_srcdir)/lsf/lib \
 
 bin_PROGRAMS = badmin bkill bparams brestart btop bbot bmgroup \
 bpeek brun busers bhosts bmig bqueues bsub bjobs bmod \
-brequeue bswitch bpost bread bresadd
+brequeue bswitch bpost bread bresadd bresrm
 
 badmin_SOURCES = badmin.c cmd.bqc.c cmd.hist.c \
 	cmd.bhc.c cmd.misc.c cmd.job.c cmd.prt.c \
@@ -259,6 +259,15 @@ bresadd_LDADD = \
         ../../lsf/intlib/.libs/liblsfint.a -lm -lnsl
 if SOLARIS
 bresadd_LDADD += -lsocket -lnsl
+endif
+
+bresrm_SOURCE = bresrm.c cmd.jobid.c cmd.err.c cmd.h
+bresrm_LDADD = \
+        ../lib/.libs/liblsbatch.a \
+        ../../lsf/lib/.libs/liblsf.a \
+        ../../lsf/intlib/.libs/liblsfint.a -lm -lnsl
+if SOLARIS
+bresrm_LDADD += -lsocket -lnsl
 endif
 
 install-data-local:

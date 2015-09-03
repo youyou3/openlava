@@ -2929,12 +2929,76 @@ do_setJobAttr(XDR * xdrs, int s, struct sockaddr_in * from, char *hostName,
     return 0;
 }
 
+/* do_bresAdd()
+ */
 int
 do_bresAdd(XDR *xdrs,
            int chfd,
            struct sockaddr_in *from,
            struct LSFHeader *reqHeader,
            struct lsfAuth *auth)
+{
+    struct batchRes res;
+    XDR replyXdr;
+    struct LSFHeader hdr;
+    char reply_buf[MSGSIZE/2];
+    int reply;
+    int l;
+
+    res.name = calloc(128, sizeof(char));
+
+    if (!xdr_batchRes(xdrs, &res, reqHeader)) {
+        reply = LSBE_XDR;
+        ls_syslog(LOG_ERR, "%s: xdr_runJobReq() failed", __func__);
+        _free_(res.name);
+        goto Reply;
+    }
+
+    reply = add_batch_resv(&res, auth);
+
+Reply:
+
+    xdrmem_create(&replyXdr,
+                  reply_buf,
+                  MSGSIZE/2,
+                  XDR_ENCODE);
+
+    hdr.opCode = reply;
+
+    if (!xdr_encodeMsg(&replyXdr,
+                       NULL,
+                       &hdr,
+                       xdr_int,
+                       0,
+                       NULL)) {
+        ls_syslog(LOG_ERR, "%s: xdr_encodeMsg() failed");
+        xdr_destroy(&replyXdr);
+        _free_(res.name);
+        return -1;
+    }
+
+    l = XDR_GETPOS(&replyXdr);
+    if (chanWrite_(chfd, reply_buf, l) <= 0) {
+        ls_syslog(LOG_ERR, "%s: chanWrite_() %d bytes failed", __func__, l);
+        xdr_destroy(&replyXdr);
+        _free_(res.name);
+        return -1;
+    }
+
+    xdr_destroy(&replyXdr);
+    _free_(res.name);
+
+    return 0;
+}
+
+/* do_bresRm()
+ */
+int
+do_bresRm(XDR *xdrs,
+          int chfd,
+          struct sockaddr_in *from,
+          struct LSFHeader *reqHeader,
+          struct lsfAuth *auth)
 {
     struct batchRes res;
     XDR replyXdr;

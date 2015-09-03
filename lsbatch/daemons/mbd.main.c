@@ -785,6 +785,11 @@ processClient(struct clientNode *client, int *needFree)
                    do_bresAdd(&xdrs, s, &from, &reqHdr, &auth),
                    "do_bresAdd()");
             break;
+        case BATCH_RM_RESV:
+            TIMEIT(0,
+                   do_bresRm(&xdrs, s, &from, &reqHdr, &auth),
+                   "do_bresRm()");
+            break;
         default:
             errorBack(s, LSBE_PROTOCOL, &from);
             if (reqHdr.version <= OPENLAVA_XDR_VERSION)
