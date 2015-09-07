@@ -2954,7 +2954,7 @@ do_bresAdd(XDR *xdrs,
         goto Reply;
     }
 
-    reply = add_batch_resv(&res, auth);
+    reply = add_batch_res(&res);
 
 Reply:
 
@@ -3016,7 +3016,7 @@ do_bresRm(XDR *xdrs,
         goto Reply;
     }
 
-    reply = add_batch_resv(&res, auth);
+    reply = rm_batch_res(&res);
 
 Reply:
 

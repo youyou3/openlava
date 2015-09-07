@@ -54,6 +54,8 @@ static void compute_group_slots(int, struct lsSharedResourceInfo *);
 static int get_group_slots(struct gData *);
 static int upd_mbd_resv(int, struct lsSharedResourceInfo *);
 static int requeue_jobs_by_res(struct batchRes *, int);
+static bool_t is_known_resource(struct batchRes *);
+static struct batch_res *get_mbd_res(struct batchRes *);
 
 void
 getLsbResourceInfo(void)
@@ -743,12 +745,75 @@ get_group_slots(struct gData *gPtr)
 /* add_batch_resv()
  */
 int
-add_batch_resv(struct batchRes *res, struct lsfAuth *auth)
+add_batch_res(struct batchRes *res)
+{
+    struct batch_res *rsv;
+
+    rsv = get_mbd_res(res);
+    if (rsv == NULL) {
+        ls_syslog(LOG_ERR, "\
+%s: resource %s unknown to MBD", __func__, res->name);
+        return LSBE_BAD_RESOURCE;
+    }
+
+    ls_syslog(LOG_DEBUG, "\
+%s: adding existing resource name %s prev %d current %d", __func__,
+              rsv->name, rsv->value, res->value);
+    rsv->value = res->value;
+
+    return LSBE_NO_ERROR;
+}
+
+/* rm_batch_res()
+ */
+int
+rm_batch_res(struct batchRes *res)
+{
+    int num;
+    struct batch_res *rsv;
+
+    rsv = get_mbd_res(res);
+    if (rsv == NULL) {
+        ls_syslog(LOG_ERR, "\
+%s: resource %s unknown to MBD", __func__, res->name);
+        return LSBE_BAD_RESOURCE;
+    }
+
+    if (res->value > rsv->value) {
+        ls_syslog(LOG_ERR, "\
+%s: attempt to remove more res %s %d than we have %d", __func__,
+                  rsv->name, res->value, rsv->value);
+        return LSBE_BAD_RESOURCE;
+    }
+
+    /* res->value is the amount to
+     * decreasec
+     */
+    num = rsv->value - res->value;
+
+    ls_syslog(LOG_DEBUG, "\
+%s: decreasing existing resource %s prev %d new %d options %d",
+              __func__, rsv->name, rsv->value, num, res->options);
+    rsv->value = num;
+
+    if (res->options & RES_RM_FORCE)
+        requeue_jobs_by_res(res, res->value);
+
+    return LSBE_NO_ERROR;
+}
+
+static struct batch_res *
+get_mbd_res(struct batchRes *res)
 {
     struct batch_res *rsv;
     hEnt *ent;
     int new;
-    int num;
+
+    if (is_known_resource(res) != LSBE_NO_ERROR) {
+        ls_syslog(LOG_ERR, "\
+%s: unknow resource %s to MBD", __func__, res->name);
+        return NULL;
+    }
 
     ent = h_addEnt_(MBDres, res->name, &new);
     if (new) {
@@ -761,31 +826,11 @@ add_batch_resv(struct batchRes *res, struct lsfAuth *auth)
         ls_syslog(LOG_DEBUG, "\
 %s: adding new batch resource name %s value %d", __func__,
                   rsv->name, rsv->value);
-        return LSBE_NO_ERROR;
-
     }
 
     rsv = ent->hData;
-    if (res->value >= rsv->value) {
 
-        ls_syslog(LOG_DEBUG, "\
-%s: adding existing resource name %s prev %d current %d", __func__,
-                  rsv->name, rsv->value, res->value);
-        rsv->value = res->value;
-
-        return LSBE_NO_ERROR;
-    }
-
-    num = rsv->value - res->value;
-    ls_syslog(LOG_DEBUG, "\
-%s: removing existing resource name %s prev %d current %d options %d",
-              __func__, rsv->name, rsv->value, res->value, res->options);
-
-
-    if (res->options & RES_RM_FORCE)
-        requeue_jobs_by_res(res, num);
-
-    return LSBE_NO_ERROR;
+    return rsv;
 }
 
 /* upd_mbd_resv()
@@ -825,6 +870,21 @@ int
 requeue_jobs_by_res(struct batchRes *res, int num)
 {
     return 0;
+}
+
+/* is_known_resource()
+ */
+static bool_t
+is_known_resource(struct batchRes *res)
+{
+    int cc;
+
+    for (cc = 0; cc < allLsInfo->nRes;  cc++) {
+        if (strcmp(res->name, allLsInfo->resTable[cc].name) == 0)
+            return LSBE_NO_ERROR;
+    }
+
+    return LSBE_BAD_RESOURCE;
 }
 
 static void

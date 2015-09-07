@@ -1405,7 +1405,8 @@ extern int                  checkResources (struct resourceInfoReq *,
 extern struct sharedResource *getResource (char *);
 extern void                 resetSharedResource(void);
 extern void                 updSharedResourceByRUNJob(const struct jData*);
-extern int                  add_batch_resv(struct batchRes *, struct lsfAuth *);
+extern int                  add_batch_res(struct batchRes *);
+extern int                  rm_batch_res(struct batchRes *);
 extern int                  sharedResourceUpdFactor;
 extern void                 freeSharedResource(void);
 extern void                 newPRMO(char *);
