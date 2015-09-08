@@ -869,6 +869,55 @@ upd_mbd_resv(int num_res, struct lsSharedResourceInfo *res)
 int
 requeue_jobs_by_res(struct batchRes *res, int num)
 {
+    struct jData *jPtr;
+    int i;
+    int cc;
+    int zres;
+    struct resVal *rval;
+
+    for (jPtr = jDataList[SJL]->back;
+         jPtr != jDataList[SJL];
+         jPtr = jPtr->back) {
+
+        if ((rval = getReserveValues(jPtr->shared->resValPtr,
+                                     jPtr->qPtr->resValPtr)) == NULL) {
+            continue;
+        }
+
+        for (i = 0; i < GET_INTNUM(allLsInfo->nRes); i++) {
+            zres += rval->rusage_bit_map[i];
+        }
+
+        if (zres == 0)
+            continue;
+
+       for (cc = 0; cc < allLsInfo->nRes; cc++) {
+           int on;
+
+           /* Not a shared resource
+            */
+           if (cc < allLsInfo->numIndx)
+               continue;
+
+           if (NOT_NUMERIC(allLsInfo->resTable[cc]))
+               continue;
+
+           TEST_BIT(cc, rval->rusage_bit_map, on);
+           if (on == 0)
+               continue;
+
+           if (strcmp(allLsInfo->resTable[cc].name, res->name) != 0)
+               continue;
+
+           requeue_job(jPtr);
+
+           if (rval->val[cc] >= num)
+               return 0;
+
+           num = num - rval->val[cc];
+       }
+    }
+
     return 0;
 }
 

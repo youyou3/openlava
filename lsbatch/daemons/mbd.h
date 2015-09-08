@@ -1527,5 +1527,6 @@ extern void freeTimeWindow(struct timeWindow *);
 extern void updateTimeWindow(struct timeWindow *);
 extern inline int numofhosts(void);
 extern int postMsg2Job(char **, struct jData *);
+extern void requeue_job(struct jData *);
 
 #endif /* _MBD_HEADER_ */

@@ -8784,6 +8784,42 @@ rmMessageFile(struct jData *jPtr)
     unlink(file);
 }
 
+/* requeue_job()
+ */
+void
+requeue_job(struct jData *jPtr)
+{
+    struct signalReq s;
+    struct lsfAuth auth;
+    int cc;
+
+    jPtr->shared->jobBill.beginTime = time(NULL) + 120;
+    jPtr->newReason = PEND_JOB_PREEMPTED;
+    jPtr->jFlags |= JFLAG_JOB_PREEMPTED;
+
+    if (logclass & LC_PREEMPT)
+        ls_syslog(LOG_DEBUG, "\
+%s: requeueing job %s will try to restart later", __func__,
+                  lsb_jobid2str(jPtr->jobId),
+                  jPtr->qPtr->queue);
+
+    s.sigValue = SIG_ARRAY_REQUEUE;
+    s.jobId = jPtr->jobId;
+    s.actFlags = REQUEUE_RUN;
+    s.chkPeriod = JOB_STAT_PEND;
+
+    memset(&auth, 0, sizeof(struct lsfAuth));
+    strcpy(auth.lsfUserName, lsbManager);
+    auth.gid = auth.uid = managerId;
+
+    cc = signalJob(&s, &auth);
+    if (cc != LSBE_NO_ERROR) {
+        ls_syslog(LOG_ERR, "\
+%s: error while requeue job %s state %d", __func__,
+                  lsb_jobid2str(jPtr->jobId), jPtr->jStatus);
+    }
+}
+
 /* jcompare()
  *
  * Job sorting function.
