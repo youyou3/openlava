@@ -56,6 +56,7 @@ extern int jobSigLog (struct jobCard *jp, int finishStatus);
 extern int lsbMemEnforce;
 extern int lsbJobMemLimit;
 extern int lsbJobCpuLimit;
+
 void
 job_checking (void)
 {
@@ -76,7 +77,8 @@ job_checking (void)
 
     checkFinish ();
 
-    for (jobCard = jobQueHead->forw; (jobCard != jobQueHead);
+    for (jobCard = jobQueHead->forw;
+         (jobCard != jobQueHead);
          jobCard = nextJob) {
 
 	nextJob = jobCard->forw;
@@ -90,6 +92,7 @@ job_checking (void)
 
 	    jobCard->runTime += (int) (now - last_check);
 	}
+
 	if (jobCard->runTime >
 	    jobCard->jobSpecs.lsfLimits[LSF_RLIMIT_RUN].rlim_curl) {
             if ((jobCard->jobSpecs.terminateActCmd == NULL)
@@ -106,17 +109,16 @@ job_checking (void)
 			continue;
                     else {
 
-                        ls_syslog(LOG_INFO, \
-                                  "%s: warning period expired killing the job=%d",
-			    fname, jobCard->jobSpecs.jobId);
+                        ls_syslog(LOG_INFO, "\
+%s: warning period expired killing the job=%d",
+                                  fname, jobCard->jobSpecs.jobId);
                         jobSigStart (jobCard, SIG_TERM_RUNLIMIT, 0, 0, SIGLOG);
                         sbdlog_newstatus(jobCard);
 			jobCard->jobSpecs.jStatus |= JOB_STAT_KILL;
                     }
 	        } else if (!jobCard->timeExpire) {
-		    ls_syslog(LOG_INFO, I18N(5704,
-                        "%s: sending warning signal to job=%d"), /* catgets 5704 */
-			fname, jobCard->jobSpecs.jobId);
+		    ls_syslog(LOG_INFO, "\
+%s: sending warning signal to job=%d", __func__, jobCard->jobSpecs.jobId);
 		    jobsig(jobCard, SIGUSR2, FALSE);
 		    jobCard->timeExpire = TRUE;
 	        }
@@ -138,8 +140,8 @@ job_checking (void)
 	}
 
         if (jobCard->jobSpecs.termTime && now > jobCard->jobSpecs.termTime
-
              && !(jobCard->jobSpecs.jAttrib & JOB_FORCE_KILL)) {
+
             if ((jobCard->jobSpecs.terminateActCmd == NULL)
                  || (jobCard->jobSpecs.terminateActCmd[0] == '\0')) {
                 if (now > jobCard->jobSpecs.termTime + WARN_TIME
@@ -178,7 +180,6 @@ job_checking (void)
             continue;
         }
 
-
         if (! window_ok (jobCard)
 	    && !(jobCard->jobSpecs.jAttrib & JOB_URGENT_NOSTOP)) {
 	    if (! (jobCard->jobSpecs.options & SUB_WINDOW_SIG)
@@ -195,13 +196,15 @@ job_checking (void)
 		jobResumeAction(jobCard, SIG_RESUME_WINDOW, SUSP_QUEUE_WINDOW);
                 continue;
 	}
-    }
+
+    } /* for (jp = jobCard; ..; ..) */
 
 
     if ((myhostnm = ls_getmyhostname()) == NULL) {
         ls_syslog(LOG_ERR, I18N_FUNC_FAIL_MM, fname, "ls_getmyhostname");
         die(SLAVE_FATAL);
     }
+
     myload = ls_loadofhosts (NULL, 0, EXACT|EFFECTIVE, 0, &myhostnm, 1);
     if (myload == NULL) {
         if (myStatus != NO_LIM)

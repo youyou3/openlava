@@ -1394,7 +1394,7 @@ strip_spaces(const char *str)
         return NULL;
 
     l = strlen(str);
-    s = calloc(l, sizeof(char));
+    s = calloc(l + 1, sizeof(char));
 
     for (cc = 0; cc < l; cc++) {
         if (str[cc] == ' '

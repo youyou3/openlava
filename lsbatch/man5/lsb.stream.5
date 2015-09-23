@@ -1,0 +1,74 @@
+.ds ]W %
+.ds ]L
+.nh
+.TH lsb.stream 5 "OpenLava Version 3.1 - Aug 2015"
+.br
+.SH NAME
+\fBlsb.stream\fR - OpenLava batch event stream files
+.SH DESCRIPTION
+.BR
+.PP
+.PP
+The OpenLava job event information could be used by any 3rd party program to
+read in stream for process and analysis.
+.PP
+The format of the file is the same as lsb.events. A 3rd party program can
+use OpenLava API lsb_geteventrec() to read and parse job event records from
+it.
+.PP
+To enable this, add the parameter MAX_STREAM_RECORDS into lsb.params to specify
+the maximum number of records each lsb.stream file should contain.
+.PP
+Whenever a host, job, or queue changes status, a record is appended
+to the stream file \fBlsb.stream.0\fR. The file is located in
+LSB_SHAREDIR/logdir/stream, where \fBLSB_SHAREDIR\fR must be
+defined in  lsf.conf(5). See mbatchd(8) for the description of
+LSB_SHAREDIR.
+.PP
+.SH Fields
+.BR
+.PP
+.PP
+The fields of a record are the same as those in lsb.events.
+The lsb.steam file introduces a new event type: STREAM_END
+.SH STREAM_END
+.BR
+.PP
+.PP
+The end of the stream file. The mbatchd writes this event just before
+switching the stream file. When this event appears, the program that reads
+the stream file should close the file and open again.
+.TP
+Version number (%s)
+
+.IP
+The OpenLava version number
+
+.TP
+Event time (%d)
+
+.IP
+The time of the event
+
+.TP
+The maximum record (%d)
+
+.IP
+The maximum event record in this file, which should the same as specified
+by MAX_STREAM_RECORDS in lsb.params
+
+.RE
+
+.SH SEE ALSO
+.BR
+.PP
+.SS Related Topics:
+.BR
+.PP
+.PP
+lsb.events(5), lsb_geteventrec(3), lsb.params(5), and mbatchd(8)
+.SS Files:
+.BR
+.PP
+.PP
+LSB_SHAREDIR/logdir/stream/lsb.stream.[01]

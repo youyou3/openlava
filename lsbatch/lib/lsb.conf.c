@@ -386,7 +386,7 @@ do_Param(struct lsConf *conf, char *fname, int *lineNum)
                                            * connections to keep around
                                            */
         {"MAX_SCHED_STAY", NULL, 0},
-        {"FRESH_PERIOD", NULL, 0},
+        {"LOAD_UPDATE_INTVL", NULL, 0}, /* 18 mbd to call lim for resources */
         {"MAX_JOB_ARRAY_SIZE", NULL, 0},
         {"DISABLE_UACCT_MAP", NULL, 0},
         {"JOB_TERMINATE_INTERVAL", NULL, 0},

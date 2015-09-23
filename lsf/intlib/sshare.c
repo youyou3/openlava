@@ -154,7 +154,6 @@ sshare_distribute_slots(struct tree_ *t,
     int tried;
 
     stack = make_link();
-    n = t->root->child;
     /* This must be emptied after every scheduling
      * cycle. There could be still some leafs
      * if not all jobs got dispatched.
@@ -166,7 +165,9 @@ sshare_distribute_slots(struct tree_ *t,
     sort_tree_by_deviate(t);
     zero_out_sent(t);
     tried = 0;
-
+    /* only after sort get the first child
+     */
+    n = t->root->child;
 znovu:
 
     /* Iterate at each tree level but
@@ -176,6 +177,9 @@ znovu:
     while (n) {
 
         sacct = n->data;
+        /* all is a dummy share account the
+         * tree is populated with real ones.
+         */
         if (sacct->options & SACCT_USER_ALL) {
             n = n->right;
             continue;
@@ -453,7 +457,7 @@ sort_siblings(struct tree_node_ *root,
     root->child = NULL;
 
     /* We want to sort in ascending order as we use
-     * tree_inser_node() which always inserts
+     * tree_insert_node() which always inserts
      * node in the left most position.
      */
     qsort(v, num, sizeof(struct tree_node_ *), cmp);

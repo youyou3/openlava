@@ -349,6 +349,7 @@ struct jData {
     int numAvailSlotsReserve;
     int numMsg;
     struct lsbMsg **msgs;
+    char *run_rusage;   /* "rusage[x=1:y=2||z=3:w=4]" */
 };
 
 

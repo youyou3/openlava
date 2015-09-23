@@ -1609,6 +1609,67 @@ bsub> CTRL-D
 The job commands are entered interactively.
 
 .RE
+.SH ENVIRONMENT VARIABLES SET FOR JOB EXECUTION
+.BR
+.PP
+.PP
+OpenLava transfers most environment environment variables from the submission
+host to the execution hosts. In addition to environment variables inherited
+from the user environment, OpenLav also sets a number of other environment
+variables for batch jobs:
+.PP
+* LSB_ERRORFILE: Name of the error file specified with a bsub -e.
+.PP
+* LSB_JOBID: Job ID assigned by OpenLava.
+.PP
+* LSB_JOBINDEX: Index of the job that belongs to a job array.
+.PP
+* LSB_CHKPNT_DIR: This variable is set each time a checkpointed job is
+submitted. The value of the variable is chkpnt_dir/job_Id, a subdirectory of the checkpoint directory that
+is specified when the job is submitted. The subdirectory is identified by the job ID of the
+submitted job.
+.PP
+* LSB_EFFECTIVE_RUSAGE: When OR is used in the rusage section of the resource
+requirement string, OpenLava uses this variable to indicate which rusage string
+is used for scheduling the job.
+.PP
+* LSB_HOSTS: The list of hosts that are used to run the batch job. For
+sequential jobs, this is only one host name. For parallel jobs, this includes multiple host names.
+.PP
+* LSB_MCPU_HOSTS: Similar to LSB_HOSTS. The format is: "host1 number_of_slot1
+host2 number_of_slot2 ..."
+.PP
+* LS_JOBPID: The process ID of the job
+.PP
+* LSB_SUB_HOST: The name of the submission host.
+.PP
+* LS_SUBCWD: The current working directory when the job is submitted.
+.PP
+* LSB_QUEUE: The name of the queue the job is dispatched from.
+.PP
+* LSB_JOBNAME: Name of the job.
+.PP
+* LSB_PROJECTNAME: Name of the project for the job.
+.PP
+* LSB_RESTART: Set to ‘Y’ if the job is a restarted job or if the job has been migrated. Otherwise this variable is not defined.
+.PP
+* LSB_EXIT_PRE_ABORT: Set to an integer value representing an exit status. A preexecution
+command should exit with this value if it wants the job to be aborted instead of
+requeued or executed.
+.PP
+* LSB_EXIT_REQUEUE: Set to the REQUEUE_EXIT_VALUES parameter of the queue.
+This variable is not defined if REQUEUE_EXIT_VALUES is not configured for the queue.
+.PP
+* LSB_INTERACTIVE: Set to ‘Y’ if the job is submitted with the -I option. Otherwise, it is
+not defined.
+.PP
+* LS_JOBPID: Set to the process ID of the job.
+.PP
+* LS_SUBCWD: This is the directory on the submission when the job was submitted. This
+is different from PWD only if the directory is not shared across machines or when the
+execution account is different from the submission account as a result of account mapping.
+.PP
+* OPENLAVA_VERSION: Indicates the current version of OpenLava.
 .SH LIMITATIONS
 .BR
 .PP

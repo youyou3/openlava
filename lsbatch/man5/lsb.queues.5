@@ -1,7 +1,7 @@
 .ds ]W %
 .ds ]L
 .nh
-.TH lsb.queues 5 "OpenLava Version 3.0 - Mar 2015"
+.TH lsb.queues 5 "OpenLava Version 3.1 - Aug 2015"
 .br
 .SH NAME
 \fBlsb.queues\fR
@@ -279,6 +279,8 @@ users in group_b will have 1/8th of queue slots, and users in group_c will
 have the remaining half of the queue slots. Groups associated with the
 sharing policy \fBmust\fR be defined in lsb.users otherwise the fairshare policy
 for the queue is disabled.
+.P
+\fBPlease make sure defining user group in lsb.users before defining fairshare policy in lsb.queues.\fR
 .SH FILELIMIT
 .BR
 .PP

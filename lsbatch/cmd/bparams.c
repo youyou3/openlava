@@ -191,6 +191,14 @@ The maximum number of finished jobs that can be stored in current events file:\n
         printf("Maximum number of records in lsb.stream file:\n");
         printf("    MAX_STREAM_RECORDS = %d\n\n", reply->maxStreamRecords);
     }
+
+    /* 15 is the default load update interval defined
+     * in mbd.h as DEF_FRESH_PERIOD
+     */
+    if (reply->freshPeriod != 15) {
+        printf("MBD load update interval is:\n");
+        printf("     LOAD_UPDATE_INTVL = %d\n\n", reply->freshPeriod);
+    }
 }
 
 

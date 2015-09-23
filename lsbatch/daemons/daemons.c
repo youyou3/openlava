@@ -86,6 +86,7 @@ struct config_param daemonParams[] = {
     {"LSB_STDOUT_DIRECT", NULL},
     {"MBD_DONT_FORK", NULL},
     {"LIM_NO_MIGRANT_HOSTS", NULL},
+    {"SBD_BIND_CPU", NULL},
     {NULL, NULL}
 };
 

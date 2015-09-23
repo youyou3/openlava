@@ -18,6 +18,9 @@
  */
 #include "preempt.h"
 
+static struct jData *
+find_first_pend_job(struct qData *);
+
 /* prm_init()
  */
 int
@@ -53,7 +56,7 @@ prm_elect_preempt(struct qData *qPtr, link_t *rl, int numjobs)
 
     /* Gut nicht jobs
      */
-    jPtr = qPtr->lastJob;
+    jPtr = find_first_pend_job(qPtr);
     if (jPtr == NULL) {
 
         fin_link(jl);
@@ -68,7 +71,7 @@ prm_elect_preempt(struct qData *qPtr, link_t *rl, int numjobs)
     numPEND = 0;
     while (jPtr) {
 
-        jPtr2 = jPtr->forw;
+        jPtr2 = jPtr->back;
         assert(jPtr->jStatus & JOB_STAT_PEND
                || jPtr->jStatus & JOB_STAT_PSUSP);
 
@@ -77,7 +80,7 @@ prm_elect_preempt(struct qData *qPtr, link_t *rl, int numjobs)
             ++numPEND;
             /* Save the candidate in jl
              */
-            push_link(jl, jPtr);
+            enqueue_link(jl, jPtr);
             if (logclass & LC_PREEMPT)
                 ls_syslog(LOG_INFO, "\
 %s: job %s queue %s can trigger preemption", __func__,
@@ -169,4 +172,22 @@ prm_elect_preempt(struct qData *qPtr, link_t *rl, int numjobs)
                   __func__, qPtr->queue);
 
     return LINK_NUM_ENTRIES(rl);
+}
+
+/* find_first_pend_job()
+ */
+static struct jData *
+find_first_pend_job(struct qData *qPtr)
+{
+    struct jData *jPtr;
+
+    for (jPtr = jDataList[PJL]->back;
+         jPtr != (void *)jDataList[PJL];
+         jPtr = jPtr->back) {
+
+        if (jPtr->qPtr == qPtr)
+            return jPtr;
+    }
+
+    return NULL;
 }

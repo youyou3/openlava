@@ -229,26 +229,6 @@ ls_time(time_t t)
 /* Here come the functions related to cgroup management
  */
 
-/* ls_get_cpu_info()
- */
-struct infoCPUs *
-ls_get_cpu_info(int *n)
-{
-    struct infoCPUs *array_cpus;
-    int i;
-
-    *n = ls_get_numcpus();
-
-    if (*n == 0)
-        return NULL;
-
-    array_cpus = calloc(*n, sizeof(struct infoCPUs));
-    for (i = 0; i < *n; i++)
-        array_cpus[i].numCPU = i;
-
-    return array_cpus;
-}
-
 /* ls_get_numcpus()
  */
 int
@@ -271,7 +251,7 @@ ls_get_numcpus(void)
     }
 
     if (n == 0)
-        return false;
+        return 0;
 
     fclose(fp);
     return n;

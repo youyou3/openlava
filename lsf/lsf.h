@@ -92,7 +92,7 @@ extern char **environ;
 
 #define LSF_DEFAULT_SOCKS       15
 #define MAXLINELEN              PATH_MAX
-#define MAXLSFNAMELEN           256
+#define MAXLSFNAMELEN           1024
 #define MAXSRES                 32
 #define MAXRESDESLEN            256
 #define NBUILTINDEX             11
@@ -588,16 +588,6 @@ struct hostEntryLog {
     char    *window;
 };
 
-/* This data structure keeps track of the
- * CPUs on the machine where sbatchd is running
- * and how many tasks are allocated vis cgroup
- * to each CPU.
- */
-struct infoCPUs {
-    int numCPU;     /* CPU number */
-    int numTasks;   /* number of tasks on this CPU */
-};
-
 /* openlava error numbers
  */
 #define LSE_NO_ERR              0
@@ -996,7 +986,6 @@ extern int expSyntax_(char *);
 /* Cgroups
  */
 extern int ls_get_numcpus(void);
-struct infoCPUs *ls_get_cpu_info(int *);
 extern bool_t ls_check_mount(const char *);
 extern char *ls_make_job_container(const char *, int);
 extern int ls_constrain_mem(int, pid_t);

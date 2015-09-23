@@ -1,7 +1,7 @@
 .ds ]W %
 .ds ]L
 .nh
-.TH post 1 "OpenLava Version 3.0 - Apr 2015"
+.TH post 1 "OpenLava Version 3.1 - Aug 2015"
 .br
 .SH NAME
 \fBbread\fR - reads message from a job
@@ -9,40 +9,41 @@
 .BR
 .PP
 .PP
-\fBbread\fR   \fR\fIjob_ID\fR
+\fBbread\fR \fIjob_ID\fR | \fB"\fR\fIjob_ID\fR\fB[\fR\fIindex\fR\fB]"
 .PP
 \fBbread\fR\fB \fR[\fB-h\fR | \fB-V\fR]
 .SH DESCRIPTION
 .BR
 .PP
 .PP
-Allow users to read messages previously posted to their jobs. Messages can be
-read until the job is cleaned from the system.
+Allows user to read messages previously posted to a job. Messages can be
+read until the job is cleaned from the OpenLava system. User can read
+messages of jobs submitted by other users.
 \fB\f
 
 .SH OPTIONS
 .BR
 .PP
 .TP
- \fIjob_ID\fR | \fB"\fR\fIjob_ID\fR\fB[\fR\fIindex_list\fR\fB]"
+ \fIjob_ID\fR | \fB"\fR\fIjob_ID\fR\fB[\fR\fIindex\fR\fB]"
 \fR
 .IP
-Required. Job ID of the job or of the job array on which to operate.
+Required. Job ID that the messages are read from.
 
 .IP
-For a job array, the index list, the square brackets, and the quotation
-marks are required. An index list is used to operate on a job array.
+For an array job, the index, the square brackets, and the quotation
+marks are required.
 .TP
 \fB-h
 \fR
 .IP
-Prints command usage to stderr and exit.
+Prints command usage to stderr and exits.
 
 .TP
 \fB-V
 \fR
 .IP
-Prints openlava release version to stderr and exit.
+Prints openlava release version to stderr and exits.
 .SH EXAMPLE
 .BR
 .PP

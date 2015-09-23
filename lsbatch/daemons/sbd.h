@@ -16,6 +16,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  *
  */
+
+#if !defined(_SBD_H_)
+#define _SBD_H
+
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
@@ -105,6 +109,14 @@ struct jobCard {
     char   *spooledExec;
     char   postJobStarted;
     char   userJobSucc;
+    int    core_num;    /* core number the job is bound to */
+};
+
+/* openlava core representation
+ */
+struct ol_core {
+    int core_num;  /* core number decimal */
+    int bound;      /* number of bound processes */
 };
 
 typedef enum {
@@ -322,4 +334,10 @@ extern int sbdCheckUnreportedStatus();
 extern void exeActCmd(struct jobCard *jp, char *actCmd, char *exitFile);
 extern void exeChkpnt(struct jobCard *jp, int chkFlags, char *exitFile);
 extern int cmp_cpus(const void *, const void *);
+extern void init_cores(void);
+extern int find_free_core(void);
+extern void free_core(int);
+extern int bind_to_core(pid_t, int);
+extern int find_bound_core(pid_t);
 
+#endif

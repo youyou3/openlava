@@ -1,22 +1,22 @@
 .ds ]W %
 .ds ]L
 .nh
-.TH lsb.events 5 "OpenLava Version 3.0 - Mar 2015"
+.TH lsb.events 5 "OpenLava Version 3.1 - Aug 2015"
 .br
 .SH NAME
-\fBlsb.events\fR - openlava batch event files  
+\fBlsb.events\fR - OpenLava batch event files
 .SH DESCRIPTION
 .BR
 .PP
 .PP
-The openlava batch event log is used to display openlava batch event history and 
-for mbatchd failure recovery. 
+The OpenLava batch event log is used to display openlava batch event history and
+for mbatchd failure recovery.
 .PP
 Whenever a host, job, or queue changes status, a record is appended 
 to the event log file \fBlsb.events\fR. The file is located in 
-LSB_SHAREDIR/\fI<clustername>\fR/logdir\fI,\fR where \fBLSB_SHAREDIR\fR must be 
-defined in  lsf.conf(5) and <\fIclustername\fR> is the name of the openlava cluster, 
-as returned by \fBlsid\fR(1). See mbatchd(8) for the description of 
+LSB_SHAREDIR/logdir, where \fBLSB_SHAREDIR\fR must be
+defined in  lsf.conf(5).
+See mbatchd(8) for the description of
 LSB_SHAREDIR. 
 .PP
 The \fBlsb.events\fR file can be read with the lsb_geteventrec() LSBLIB call. 
@@ -1486,4 +1486,4 @@ lsb.users(5), lsb.params(5), lsf.conf(5), lsf.cluster(5), badmin(8) and mbatchd(
 .BR
 .PP
 .PP
-LSB_SHAREDIR/<\fIclustername\fR>/logdir/lsb.events[.?]
+LSB_SHAREDIR/logdir/lsb.events[.?]

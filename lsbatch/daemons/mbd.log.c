@@ -3077,6 +3077,12 @@ readLogJobInfo(struct jobSpecs *jobSpecs, struct jData *jpbw,
         sp++;
     }
 
+    /* Save the effective rusage which dispatched
+     * the job
+     */
+    if (jpbw->run_rusage)
+        ++numEnv;
+
     if (jpbw->qPtr->jobStarter)
         numEnv++;
 
@@ -3122,6 +3128,11 @@ readLogJobInfo(struct jobSpecs *jobSpecs, struct jData *jpbw,
                           fname, LSB_ARRAY_JOBID(jpbw->jobId),
                           numEnv);
             }
+        }
+
+        if (jpbw->run_rusage) {
+            jobSpecs->env[i] = strdup(jpbw->run_rusage);
+            ++i;
         }
 
         if (jpbw->qPtr->jobStarter) {

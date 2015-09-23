@@ -251,7 +251,6 @@ newJob(struct submitReq *subReq, struct submitMbdReply *Reply, int chan,
         return (returnErr);
     }
 
-
     copyJobBill (subReq, &newjob->shared->jobBill, newjob->jobId);
     newjob->restartPid = newjob->shared->jobBill.restartPid;
     newjob->chkpntPeriod = newjob->shared->jobBill.chkpntPeriod;
@@ -261,7 +260,6 @@ newJob(struct submitReq *subReq, struct submitMbdReply *Reply, int chan,
     FREEUP (jf.data);
 
     newjob->schedHost = safeSave (hostType);
-
 
     if ((newjob->shared->jobBill.options & SUB_RESTART) ||
         (idxList = parseJobArrayIndex(newjob->shared->jobBill.jobName,
@@ -288,8 +286,7 @@ newJob(struct submitReq *subReq, struct submitMbdReply *Reply, int chan,
         ls_syslog(LOG_DEBUG1, "%s: New job <%s> submitted to queue <%s>",
                   fname, lsb_jobid2str(newjob->jobId), newjob->qPtr->queue);
 
-    return(LSBE_NO_ERROR);
-
+    return LSBE_NO_ERROR;
 }
 
 struct hData *
@@ -4780,8 +4777,9 @@ initJData(struct jShared  *shared)
     job->reservedGrp = -1;
     job->groupCands = NULL;
     job->inEligibleGroups = NULL;
+    job->run_rusage = NULL;
 
-    return (job);
+    return job;
 }
 
 
@@ -6456,6 +6454,8 @@ freeJData(struct jData *jPtr)
     for (i = 0; i < jPtr->numMsg; i++)
         _free_(jPtr->msgs[i]->msg);
     _free_(jPtr->msgs);
+
+    _free_(jPtr->run_rusage);
 
     FREE_ALL_GRPS_CAND(jPtr);
 

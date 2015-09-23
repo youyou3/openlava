@@ -1,4 +1,5 @@
-/* $Id: sbd.misc.c 397 2007-11-26 19:04:00Z mblack $
+/*
+ * Copyright (C) 2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
  *
  * This program is free software; you can redistribute it and/or modify
@@ -16,17 +17,21 @@
  *
  */
 
-#include <stdlib.h>
+#define _GNU_SOURCE
+#include <sched.h>
 
 #include "sbd.h"
 
-#include "../../lsf/lib/lsi18n.h"
 #define NL_SETN         11
 
 extern short mbdExitVal;
 extern int mbdExitCnt;
 
-#define NL_SETN         11
+/* The cpu array
+ */
+static struct ol_core *cores;
+static int num_cores;
+
 void
 milliSleep( int msec )
 {
@@ -338,4 +343,121 @@ getManagerId(struct sbdPackage *sbdPackage)
                   __func__);
         die(FATAL_ERR);
     }
+}
+
+/* init_cores()
+ */
+void
+init_cores(void)
+{
+    int i;
+
+    if (! daemonParams[SBD_BIND_CPU].paramValue)
+        return;
+
+    num_cores = ls_get_numcpus();
+    if (num_cores <= 0) {
+        ls_syslog(LOG_ERR, "%s: huh no cores on this box?", __func__);
+        return;
+    }
+
+    cores = calloc(num_cores, sizeof(struct ol_core));
+
+    for (i = 0; i < num_cores; i++) {
+        cores[i].core_num = i;
+    }
+}
+
+/* find_free_core()
+ */
+int
+find_free_core(void)
+{
+    int i;
+
+    if (! cores)
+        return -1;
+
+    for (i = 0; i < num_cores; i++) {
+        if (cores[i].bound == 0)
+            return i;
+    }
+
+    return -1;
+}
+
+/* bind_to_core()
+ */
+int
+bind_to_core(pid_t pid, int core_num)
+{
+    cpu_set_t  set;
+    int cc;
+
+    if (! cores)
+        return -1;
+
+    CPU_ZERO(&set);
+    CPU_SET(core_num, &set);
+
+    cc = sched_setaffinity(pid, sizeof(cpu_set_t), &set);
+    if (cc < 0) {
+        ls_syslog(LOG_ERR, "\
+%s: failed binding process %d to cpu %d %m", __func__, pid, core_num);
+        return -1;
+    }
+    cores[core_num].bound++;
+
+    return 0;
+}
+
+/* free_core()
+ */
+void
+free_core(int core_num)
+{
+    int i;
+
+    if (! cores)
+        return;
+
+    /* Uot??
+     */
+    if (core_num < 0)
+        return;
+
+    for (i = 0; i < num_cores; i++) {
+        if (cores[i].core_num == core_num) {
+            cores[i].bound--;
+            return;
+        }
+    }
+}
+
+/* find_bound_core()
+ */
+int
+find_bound_core(pid_t pid)
+{
+    cpu_set_t set;
+    int cc;
+
+    if (! cores)
+        return -1;
+
+    CPU_ZERO(&set);
+
+    cc = sched_getaffinity(pid, sizeof(cpu_set_t), &set);
+    if (cc < 0) {
+        ls_syslog(LOG_ERR, "\
+%s: sched_getaffinity() failed for pid %d %m", __func__, pid);
+        return -1;
+    }
+
+    for (cc = 0; cc < num_cores; cc++) {
+        if (CPU_ISSET(cc, &set))
+            return cc;
+    }
+
+    return -1;
 }

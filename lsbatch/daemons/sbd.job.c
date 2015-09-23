@@ -89,6 +89,7 @@ extern int cpHostent(struct hostent *, const struct hostent *);
 static int acctMapTo(struct jobCard *jobCard);
 static void setup_mem_cgroup(struct jobCard *);
 static void rm_mem_cgroup(struct jobCard *);
+static void setup_cpu_bind(struct jobCard *);
 
 static struct passwd *
 __getpwnam__(const char *name)
@@ -174,6 +175,10 @@ job_exec(struct jobCard *jobCardPtr, int chfd)
      * we just started
      */
     setup_mem_cgroup(jobCardPtr);
+
+    /* Setup the cpu binding
+     */
+    setup_cpu_bind(jobCardPtr);
 
     return ERR_NO_ERROR;
 }
@@ -2094,7 +2099,7 @@ addJob (struct jobSpecs *jobSpecs, int mbdVersion)
     int reply;
     int cc;
 
-    jp =  (struct jobCard *) my_calloc (1, sizeof (struct jobCard), fname);
+    jp = my_calloc (1, sizeof (struct jobCard), fname);
     memcpy((char *) &jp->jobSpecs, jobSpecs, sizeof(struct jobSpecs));
 
     if (jobSpecs->execUsername[0] == '\0') {
@@ -2145,10 +2150,21 @@ addJob (struct jobSpecs *jobSpecs, int mbdVersion)
         die(SLAVE_FATAL);
     }
 
+    if (daemonParams[SBD_BIND_CPU].paramValue) {
+        int num;
+
+        num = find_bound_core(jobSpecs->jobPid);
+        ls_syslog(LOG_DEBUG, "\
+%s: job %d pid %d bound to core %d", __func__, jobSpecs->jobId,
+                  jobSpecs->jobPid, num);
+        jp->core_num = num;
+    }
+
     if (jp->jobSpecs.jAttrib & Q_ATTRIB_EXCLUSIVE)
         if (lockHosts (jp) < 0) {
-            ls_syslog(LOG_ERR, _i18n_msg_get(ls_catd , NL_SETN, 5421,
-                                             "%s: lockHosts() failed for job <%s>; Host used by the job will not be locked"), fname, lsb_jobid2str(jp->jobSpecs.jobId)); /* catgets 5421 */
+            ls_syslog(LOG_ERR, "\
+%s: lockHosts() failed for job <%s>; Host used by the job will not be locked",
+                      __func__, lsb_jobid2str(jp->jobSpecs.jobId));
         }
     renewJobStat (jp);
 
@@ -2323,6 +2339,13 @@ jobGone(struct jobCard *jp)
         jp->exitPid = -1;
         if (jp->postJobStarted == 0)
             jobFinishRusage(jp);
+    }
+
+    /* Clean up the allocated core
+     */
+    if (jp->core_num != -1) {
+        free_core(jp->core_num);
+        jp->core_num = -1;
     }
 
     if (jp->jobSpecs.actPid == 0 && jp->exitPid == -1) {
@@ -3874,6 +3897,7 @@ initJobCard(struct jobCard *jp, struct jobSpecs *jobSpecs, int *reply)
 
     jp->postJobStarted = 0;
     jp->userJobSucc = FALSE;
+    jp->core_num = -1;
 
     return 0;
 }
@@ -4096,4 +4120,37 @@ rm_mem_cgroup(struct jobCard *jPtr)
     lsb_rmcgroup_mem(job_id, jPtr->jobSpecs.jobPid);
 
     ls_syslog(LOG_INFO, "%s: cleanup job %s", __func__, job_id);
+}
+
+/* setup_cpu_bind()
+ */
+static void
+setup_cpu_bind(struct jobCard *jPtr)
+{
+    int cc;
+    int num;
+
+    if (! daemonParams[SBD_BIND_CPU].paramValue)
+        return;
+
+    num = find_free_core();
+    if (num < 0) {
+        ls_syslog(LOG_ERR, "\
+%s: failed to find a free core for job %d pid %d", __func__,
+                  jPtr->jobSpecs.jobId, jPtr->jobSpecs.jobPid);
+        return;
+    }
+
+    cc = bind_to_core(jPtr->jobSpecs.jobPid, num);
+    if (cc < 0) {
+        ls_syslog(LOG_ERR, "\
+%s: failed to bind to core %d job %d pid %d", __func__,
+                  num, jPtr->jobSpecs.jobId, jPtr->jobSpecs.jobPid);
+        return;
+    }
+
+    ls_syslog(LOG_DEBUG, "%s: job %d pid %d bound to core %d", __func__,
+              jPtr->jobSpecs.jobId, jPtr->jobSpecs.jobPid, num);
+
+    jPtr->core_num = num;
 }

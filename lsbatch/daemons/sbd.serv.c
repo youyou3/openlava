@@ -65,13 +65,14 @@ do_newjob(XDR *xdrs, int chfd, struct LSFHeader *reqHdr)
 	}
     }
 
-    jp = (struct jobCard *) calloc(1, sizeof(struct jobCard));
+    jp = calloc(1, sizeof(struct jobCard));
     if (jp == NULL) {
 	ls_syslog(LOG_ERR, I18N_JOB_FAIL_S_M, fname,
                   lsb_jobid2str(jobSpecs.jobId), "calloc");
 	reply = ERR_MEM;
 	goto sendReply;
     }
+
     memcpy((char *) &jp->jobSpecs, (char *) &jobSpecs,
 	   sizeof(struct jobSpecs));
 
@@ -79,7 +80,9 @@ do_newjob(XDR *xdrs, int chfd, struct LSFHeader *reqHdr)
     jp->jobSpecs.startTime = now;
     jp->jobSpecs.reasons = 0;
     jp->jobSpecs.subreasons = 0;
-
+    /* Initialize the core number
+     */
+    jp->core_num = -1;
 
     if (jp->jobSpecs.jAttrib & Q_ATTRIB_EXCLUSIVE) {
 	if (lockHosts (jp) < 0) {
@@ -104,7 +107,7 @@ do_newjob(XDR *xdrs, int chfd, struct LSFHeader *reqHdr)
 
     jp->execJobFlag = 0;
 
-    if( jp->runTime < 0 ) {
+    if (jp->runTime < 0) {
         jp->runTime = 0;
     }
     jp->execGid = 0;

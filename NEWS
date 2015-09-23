@@ -1,5 +1,8 @@
 Release notes for OpenLava versions
 
+3.1
+====
+
 3.1pre1
 =======
 
@@ -25,6 +28,23 @@ Release notes for OpenLava versions
 -- Improve rusage syntax parsing, now spaces between operands are ignored
    and mbatchd does not syntax error.
 -- Keep updating man pages.
+-- Add the environment variable LSB_EFFECTIVE_RUSAGE. In case a job is using
+   the rusage or feature this variable indicates which or clause evaluated
+   true dispatching the job.
+-- Fix fairshare bug which prevented jobs from being scheduled if groups
+   had different shares.
+-- Added support for client only hosts. These are host that do not run
+   OpenLava daemons but can run commands and submit jobs.
+-- Fix mbatchd bug that limited the output and error file to 80 characters
+   of length.
+-- Enlarged MAXLSFNAMELEN to 1024.
+-- Introduce cpu binding using sched_setaffinity()/sched_getaffinity(),
+   this feature is enabled by setting SBD_BIND_CPU=y in lsf.conf.
+-- Introduced LOAD_UPDATE_INTVL parameter in lsb.params. It controls how
+   often MBD calls LIM to update load and shared resources. The default
+   value is 15 seconds. Smaller the value and faster is the scheduler
+   response to changes in resource values.
+-- Fix MBD job lists bug preventing preemption from working correctly.
 
 3.0.1
 ======
