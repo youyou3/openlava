@@ -24,6 +24,7 @@ Release notes for OpenLava versions
 -- Improve scheduling performance when jobs use shared resources.
 -- Improve rusage syntax parsing, now spaces between operands are ignored
    and mbatchd does not syntax error.
+-- Keep updating man pages.
 
 3.0.1
 ======

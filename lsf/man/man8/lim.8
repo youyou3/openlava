@@ -1,11 +1,11 @@
 .\" $Id: lim.8,v 1.2 2012/08/13 21:28:01 cchen Exp $
 .ds ]W %
 .ds ]L
-.TH LIM 8 "OpenLava Version 3.0 - Mar 2015"
+.TH LIM 8 "OpenLava Version 3.1 - Aug 2015"
 .SH NAME
 lim \- Load Information Manager (\s-1LIM\s0) for the OpenLava system
 .SH SYNOPSIS
-\fBLSF_SERVDIR/lim [ -h ] [ -V ] [ -C ] [ -d \fIenv_dir\fB ] [ -\fIdebug_level\fB ]
+\fBLSF_SERVDIR/lim [ -h ] [ -V ] [ -t ] [ -C ] [ -d \fIenv_dir\fB ] [ -\fIdebug_level\fB ]
 .SH DESCRIPTION
 \s-1LIM\s0 is a server that runs on every server host which is
 participating in load sharing. It provides system configuration
@@ -211,6 +211,10 @@ Print command usage to stderr and exit.
 .TP 5
 .B -V
 Print OpenLava release version to stderr and exit.
+.TP 5
+.B -t
+Displays host information like host architecture, CPU model, number of 
+physical processors, number of cores etc. The data is from /proc/cpuinfo.
 .TP 5
 .B -C
 Check the configuration file content with verbose error reporting

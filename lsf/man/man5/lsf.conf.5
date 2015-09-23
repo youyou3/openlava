@@ -1,7 +1,7 @@
 .ds ]W %
 .ds ]L
 .nh
-.TH lsf.conf 5 "OpenLava Version 3.0 - Mar 2015"
+.TH lsf.conf 5 "OpenLava Version 3.1 - Aug 2015"
 .br
 .SH NAME
 \fBlsf.conf\fR
@@ -3297,3 +3297,29 @@ follows:
 .HP 2
 \(bu On UNIX: $TMPDIR or /tmp
 .RE
+.SH OL_CGROUP_ROOT
+.BR
+.PP
+.SS Syntax
+.BR
+.PP
+.PP
+\fBOL_CGROUP_ROOT=\fR\fIdir\fR
+.SS Description
+.BR
+.PP
+.PP
+Specifies the path and directory of the root of the Linux Cgroup. 
+On RHEL/CentOS 6, the path is /cgroup. On RHEL/CentOS 7, it is 
+/sys/fs/cgroup.
+.PP
+When this variable is set, OpenLava creates a Linux Cgroup for user's job 
+and use
+the Cgroup to limit the memory usage of the job. The job Cgroup is destroyed 
+after the job is finished (completed or exited). 
+.PP
+.SS Default
+.BR
+.PP
+.PP
+By default, OL_CGROUP_ROOT is not set, and OpenLava does not run jobs with Cgroups. 

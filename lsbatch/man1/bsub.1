@@ -1,7 +1,7 @@
 .ds ]W %
 .ds ]L
 .nh
-.TH bsub 1 "OpenLava Version 3.0 - Mar 2015"
+.TH bsub 1 "OpenLava Version 3.1 - Aug 2015"
 .br
 .SH NAME
 \fBbsub\fR - submits a batch job to openlava
@@ -848,15 +848,167 @@ queue listed first is considered first.
 
 .IP
 Runs the job on a host that meets the specified resource requirements.
-Specify the resource requirement string as usual. The size of the
+A resource requirement string specifies the resources a job needs. 
+OpenLava uses resource requirements to select job execution hosts.
+The size of the
 resource requirement string is limited to 512 bytes.
-
+.IP
+Resource requirement strings are divided into the following sections.
+Each section has a different syntax.
+.IP
+* A selection section (select). The selection section 
+specifies the criteria for selecting execution hosts
+.IP
+* An ordering section (order). The ordering section
+indicates how the hosts that meet the selection
+criteria should be sorted.
+.IP
+* A resource usage section (rusage). The resource usage
+section specifies the expected resource consumption
+of the task.
+.IP
+* A job spanning section (span). The job spanning
+section indicates if a parallel job should span
+across multiple hosts.
+.IP
+The resource requirement string sections have the following syntax:
+.IP
+select[selection_string] order[order_string] 
+.br
+rusage[usage_string [, usage_string]
+.br
+[|| usage_string] ...] span[span_string]
+.IP
+The square brackets must be typed as shown for each section. 
+A blank space must separate each resource requirement section.
+.IP
+You can omit the select keyword and the square brackets,
+but the selection string must be the first string in the
+resource requirement string. If you do not give a section name, 
+the first resource requirement string is treated as a selection string
+(select[\fIselection_string\fR]).
+.IP
+For example:
+.IP
+bsub -R "type==linux order[ut] rusage[mem=100]" mjob
+.IP
+is equivalent to the following:
+.IP
+bsub -R "select[type==linux] order[ut] rusage[mem=100]" mjob
 .IP
 Any run-queue-length-specific resource, such as r15s, r1m or r15m,
 specified in the resource requirements refers to the normalized run
-queue length.
-
-
+queue length. If you need to include a hyphen (-) or other 
+non-alphabet characters within the string,
+enclose the text in single quotation marks, for example,
+bsub -R "select[hname!='node-x01']".
+.IP
+Memory (mem), swap (swp), and temporary disk space (tmp) limits in
+select[] and rusage[] sections are specified in MB.
+.IP
+A resource named "slots" is a predefined resource in the OpenLava
+batch system. This resource is not visible in any command. It can 
+be used to sort candidate job execution hosts based on number of
+free job slots. To submit a job that runs on a host with more free
+job slots (so called "striping" scheduling policy):
+.IP
+bsub -R "order[slots]" mjob
+.IP
+To submit a job that runs on a host with less free job slots (so
+called "packing" scheduling policy):
+.IP
+bsub -R "order[-slots]" mjob
+.IP
+For example, to submit a job that runs on CentOS 6 or CentOS 7:
+.IP
+bsub -R "centos6 || centos7" mjob
+.IP
+To submit a job that runs on a centos7 host that is lightly loaded
+(CPU utilization) and has at least 100MB of swap space available.
+.IP
+bsub -R "swap>100 && centos7 order[ut]" mjob
+.IP
+A resource called \fRbigmem\fR is defined in lsf.shared
+as an exclusive resource for \fRhost002\fR in
+lsf.cluster.openlava. Use the following command to
+submit a job that runs on \fRhost002\fR:
+.IP
+bsub -R "bigmem" mjob
+.IP
+or
+.IP
+bsub -R "defined(bigmem)" mjob
+.IP
+A static shared resource is configured for licenses for
+the VCS application as a resource called
+\fRvcs\fR. To submit a job that runs on a host
+when there is a license available:
+.IP
+bsub -R "select[defined(vcs)] rusage[vcs=1]" mjob
+.IP
+The following job requests 20 MB memory for the duration
+of the job, and 1 license for 2 minutes:
+.IP
+bsub -R "rusage[mem=20, license=1:duration=2]" mjob
+.IP
+The following job requests 20 MB of memory and 50 MB of
+swap space for 1 hour, and 1 license for 2 minutes:
+.IP
+bsub -R "rusage[mem=20:swp=50:duration=1h, license=1:duration=2]" mjob
+.IP
+The following job requests 20 MB of memory for the
+duration of the job, 50 MB of swap space for 1 hour, and
+1 license for 2 minutes.
+.IP
+bsub -R "rusage[mem=20,swp=50:duration=1h, license=1:duration=2]" mjob
+.IP
+The following job requests 50 MB of swap space, linearly
+decreasing the amount reserved over a duration of 2
+hours, and requests 1 license for 2 minutes:
+.IP
+bsub -R "rusage[swp=50:duration=2h:decay=1, license=1:duration=2]" mjob
+.IP
+The following job requests two resources with same
+duration but different decay:
+.IP
+bsub -R "rusage[mem=20:duration=30:decay=1, lic=1:duration=30]" mjob
+.IP
+You are running an application version 1.5 as a resource
+called \fRapp_lic_v15\fR and the same application
+version 2.0.1 as a resource called \fRapp_lic_v201\fR.
+The license key for version 2.0.1 is backward compatible
+with version 1.5, but the license key for version 1.5
+does not work with 2.0.1.
+.IP
+Job-level resource requirement specifications that use
+the \fR||\fR operator take precedence over any
+queue-level resource requirement specifications.
+.IP
+* If you can only run your job using one version of the
+application, submit the job without specifying an
+alternative resource. To submit a job that only uses
+\fRapp_lic_v201\fR:
+.IP
+bsub -R "rusage[app_lic_v201=1]" mjob
+.IP
+* If you can run your job using either version of the
+application, try to reserve version 2.0.1 of the
+application. If it is not available, you can use
+version 1.5. To submit a job that tries
+\fRapp_lic_v201\fR before trying \fRapp_lic_v15\fR:
+.IP
+bsub -R "rusage[app_lic_v201=1||app_lic_v15=1]" mjob
+.IP
+* If different versions of an application require
+different system resources, you can specify other
+resources in your \fRrusage\fR strings. To submit a
+job that uses 20 MB of memory for \fRapp_lic_v201\fR
+or 20 MB of memory and 50 MB of swap space for
+\fRapp_lic_v15\fR:
+.IP
+bsub -R "rusage[mem=20:app_lic_v15=1||
+.br
+mem=20:swp=50:app_lic_v201=1]" mjob
 .TP
 -\fBsp\fR priority
 

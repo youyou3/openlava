@@ -1,7 +1,7 @@
 .ds ]W %
 .ds ]L
 .nh
-.TH lsb.params 5 "OpenLava Version 3.0 - Mar 2015"
+.TH lsb.params 5 "OpenLava Version 3.1 - Aug 2015"
 .br
 .SH NAME
 \fBlsb.params\fR
@@ -566,6 +566,49 @@ The time in seconds the mbatchd has for scheduling pass.
 .PP
 .PP
 3
+.SH MAX_STREAM_RECORDS
+.BR
+.PP
+.SS Syntax
+.BR
+.PP
+\fBMAX_STREAM_RECORDS=\fR\fIinteger\fR
+.SS Description
+.BR
+.PP
+.PP
+Enables mbatchd to write job events data into a stream file 
+lsb.stream.0 located
+in $LSB_SHAREDIR/logdir/stream. This is to allow a 3rd party
+program to read and process job data in real time 
+without touching lsb.events files.
+
+When mbatchd switches lsb.events file (i.e. renames the current event
+file to lsb.events.1 and creates a new lsb.events file), 
+the 3rd party program is not informed for the change. As the result,
+it is hard for the 3rd party program to rely on lsb.events file for
+streaming job data. In addition, lsb.events files are critical in 
+the OpenLava system. It is not recommended for a 3rd party program
+to touch them. 
+
+After writing number of records that is defined by 
+MAX_STREAM_RECORDS, the mbatchd writes an STREAM_END event,
+closes the file lsb.stream.0, renames it to lsb.stream.1, and
+creates a new lsb.stream.0 to conitnue writing job events.
+The previous lsb.stream.1 is overridden. 
+
+The 3rd party program could call OpenLava C API lsb_geteventrec() to 
+read and parse records in lsb.stream.0.
+The program should close the file after getting the event
+STREAM_END, then open the file lsb.stream.0 again to continue reading.
+.PP
+.SS Default
+.BR
+.PP
+.PP
+Undefined. No stream files are created.
+.SS See Also
+lsb.events(5) lsb_geteventrec(3)
 .SH MAX_USER_PRIORITY
 .BR
 .PP

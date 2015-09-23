@@ -62,6 +62,10 @@ getUid(const char *userName, uid_t *uid)
 {
     struct passwd *pw;
 
+    if (userName == NULL
+        || userName[0] == 0)
+        return LSE_BADUSER;
+
     if ((pw = getpwnam(userName)) == NULL) {
         return LSE_BADUSER;
     }

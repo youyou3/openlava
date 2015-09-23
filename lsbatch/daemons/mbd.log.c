@@ -4796,7 +4796,7 @@ streamEvent(struct eventRec *logPtr)
     if ((n % mbdParams->maxStreamRecords) == 0) {
 
         logPtr2.type = EVENT_STREAM_END;
-        sprintf(logPtr->version, "%d", OPENLAVA_XDR_VERSION);
+        sprintf(logPtr2.version, "%d", OPENLAVA_XDR_VERSION);
         logPtr2.eventTime = logPtr->eventTime;
         logPtr2.eventLog.eos.numRecords = n;
 
@@ -4823,7 +4823,7 @@ streamEvent(struct eventRec *logPtr)
             return -1;
         }
 
-        fp = fopen(streamFile, mode);
+        fp = fopen(streamFile, "w");
         if (fp == NULL) {
             ls_syslog(LOG_ERR, "\
 %s: failed to open stream %s %m", __func__, streamFile);
