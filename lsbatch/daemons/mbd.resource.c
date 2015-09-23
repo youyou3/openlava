@@ -29,8 +29,8 @@ static void addSharedResource (struct lsSharedResourceInfo *);
 static void addInstances (struct lsSharedResourceInfo *, struct sharedResource *);
 static void freeHostInstances (void);
 static void initHostInstances (int);
-static int copyResource (struct lsbShareResourceInfoReply *,
-                         struct sharedResource *, char *);
+static int copyResource(struct lsbShareResourceInfoReply *,
+                        struct sharedResource *, char *);
 
 struct objPRMO *pRMOPtr = NULL;
 static hTab *MBDres;
@@ -81,8 +81,16 @@ getLsbResourceInfo(void)
     if (numResources > 0)
         freeSharedResource();
 
+    /* Slots of a host group are a shared
+     * resource if configured in lsb.hosts
+     */
     compute_group_slots(numRes, resourceInfo);
 
+    /* MBD specific resources, these are
+     * generally license that are not reported
+     * by elim but add/removed to MBD directly using
+     * the bresadd/bresrm interfaces
+     */
     upd_mbd_resv(numRes, resourceInfo);
 
     initHostInstances(numRes);
@@ -305,6 +313,25 @@ checkResources(struct resourceInfoReq *resourceInfoReq,
     if (numResources == 0)
         return LSBE_NO_RESOURCE;
 
+    {
+        int cc;
+        int k;
+        struct resourceInstance **instance;
+
+        for (cc = 0; cc < numResources; cc++) {
+            ls_syslog(LOG_INFO, "\
+%s: name %s instances %d", __func__, sharedResources[cc]->resourceName,
+                      sharedResources[cc]->numInstances);
+
+            instance = sharedResources[cc]->instances;
+            for (k = 0; k < sharedResources[cc]->numInstances; k++) {
+                ls_syslog(LOG_INFO, "\
+%s: name %s lsfValue %s value %s", __func__, instance[k]->resName,
+                          instance[k]->lsfValue, instance[k]->value);
+            }
+        }
+    }
+
     if (resourceInfoReq->hostName == NULL
         || (resourceInfoReq->hostName
             && strcmp (resourceInfoReq->hostName, " ")== 0))
@@ -325,7 +352,7 @@ checkResources(struct resourceInfoReq *resourceInfoReq,
 
     reply->numResources = 0;
     reply->resources = my_malloc(numResources
-                                  * sizeof (struct lsbSharedResourceInfo), fname);
+                                 * sizeof (struct lsbSharedResourceInfo), fname);
 
     for (i = 0; i < resourceInfoReq->numResourceNames; i++) {
         found = FALSE;
@@ -335,7 +362,7 @@ checkResources(struct resourceInfoReq *resourceInfoReq,
                             sharedResources[j]->resourceName)))
                 continue;
             found = TRUE;
-            if ((replyCode = copyResource (reply, sharedResources[j],
+            if ((replyCode = copyResource(reply, sharedResources[j],
                      (hPtr != NULL)?hPtr->host:NULL)) != LSBE_NO_ERROR) {
                 return replyCode;
             }
@@ -359,8 +386,8 @@ checkResources(struct resourceInfoReq *resourceInfoReq,
 }
 
 static int
-copyResource (struct lsbShareResourceInfoReply *reply,
-              struct sharedResource *resource, char *hostName)
+copyResource(struct lsbShareResourceInfoReply *reply,
+             struct sharedResource *resource, char *hostName)
 {
     static char fname[] = "copyResource";
     int i, j, num, found = FALSE, numInstances;
@@ -391,7 +418,7 @@ copyResource (struct lsbShareResourceInfoReply *reply,
 
         found = FALSE;
         reply->resources[num].instances[numInstances].totalValue =
-                     safeSave (resource->instances[i]->value);
+            safeSave (resource->instances[i]->value);
 
         if ((rsvValue = atoi(resource->instances[i]->value)
              - atoi(resource->instances[i]->lsfValue)) < 0)
@@ -399,10 +426,11 @@ copyResource (struct lsbShareResourceInfoReply *reply,
 
         sprintf (stringValue, "%-10.1f", rsvValue);
         reply->resources[num].instances[numInstances].rsvValue =
-                     safeSave (stringValue);
+            safeSave (stringValue);
 
         reply->resources[num].instances[numInstances].hostList =
-          (char **) my_malloc (resource->instances[i]->nHosts * sizeof (char *),                               fname);
+            my_malloc (resource->instances[i]->nHosts
+                       * sizeof (char *), fname);
         for (j = 0; j < resource->instances[i]->nHosts; j++) {
             reply->resources[num].instances[numInstances].hostList[j] =
                        safeSave(resource->instances[i]->hosts[j]->host);
@@ -802,6 +830,8 @@ rm_batch_res(struct batchRes *res)
     return LSBE_NO_ERROR;
 }
 
+/* get_mbd_res()
+ */
 static struct batch_res *
 get_mbd_res(struct batchRes *res)
 {

@@ -4216,11 +4216,6 @@ scheduleAndDispatchJobs(void)
         mSchedStage |= M_STAGE_INIT;
     }
 
-    /* Update shared resources regardless of built in
-     * timeout, some resources are just mbd resources.
-     */
-    TIMEIT(0, getLsbResourceInfo(), "getLsbResourceInfo()");
-
     if (!(mSchedStage & M_STAGE_GOT_LOAD)) {
 
         if (now_disp - lastUpdTime > freshPeriod) {

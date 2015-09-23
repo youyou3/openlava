@@ -22,15 +22,13 @@
 void
 usage(void)
 {
-    fprintf(stderr, "usage: bresadd [-V] [-h] res_name res_val\n");
+    fprintf(stderr, "usage: bresadd [-V] [-h] -r res_name -v res_val\n");
 }
 
 int
 main(int argc, char **argv)
 {
     int cc;
-    char *res_name;
-    int res_val;
     struct batchRes rsv;
 
     if (lsb_init(argv[0]) < 0) {
@@ -38,7 +36,8 @@ main(int argc, char **argv)
 	return -1;
     }
 
-    while ((cc = getopt(argc, argv, "Vh")) != EOF) {
+    memset(&rsv, 0, sizeof(struct batchRes));
+    while ((cc = getopt(argc, argv, "Vhr:v:")) != EOF) {
         switch (cc) {
             case 'V':
                 fputs(_LS_VERSION_, stderr);
@@ -46,37 +45,33 @@ main(int argc, char **argv)
             case 'h':
                 usage();
                 return 0;
+            case 'r':
+                rsv.name = strdup(optarg);
+                break;
+            case 'v':
+                rsv.value = atoi(optarg);
+                break;
             default:
                 break;
         }
     }
 
-    if (argc != 3) {
+    if (rsv.name == NULL
+        || rsv.value <= 0) {
         usage();
-        lsberrno = LSBE_BAD_ARG;
         return -1;
     }
-
-    res_name = strdup(argv[1]);
-    if (! isint_(argv[2])) {
-        usage();
-        lsberrno = LSBE_BAD_ARG;
-        return -1;
-    }
-    res_val = atoi(argv[2]);
-
-    rsv.name = res_name;
-    rsv.value = res_val;
 
     cc = lsb_addbatchres(&rsv);
     if (cc != LSBE_NO_ERROR) {
         lsb_perror("lsb_addbatchres()");
-        free(res_name);
+        free(rsv.name);
         return -1;
     }
+
     printf("Resource: %s with value %d sent to mbatchd all right.\n",
-           res_name, res_val);
-    free(res_name);
+           rsv.name, rsv.value);
+    free(rsv.name);
 
     return 0;
 }

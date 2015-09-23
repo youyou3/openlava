@@ -42,6 +42,7 @@ static void freeShareResourceInfoReply(struct  lsbShareResourceInfoReply *);
 static int xdrsize_QueueInfoReply(struct queueInfoReply * );
 extern void closeSession(int);
 static int sendLSFHeader(int, int);
+static int sendLSFHeaderNonBlock(int, int);
 
 int
 do_submitReq(XDR *xdrs,
@@ -2939,11 +2940,7 @@ do_bresAdd(XDR *xdrs,
            struct lsfAuth *auth)
 {
     struct batchRes res;
-    XDR replyXdr;
-    struct LSFHeader hdr;
-    char reply_buf[MSGSIZE/2];
     int reply;
-    int l;
 
     res.name = calloc(128, sizeof(char));
 
@@ -2958,34 +2955,12 @@ do_bresAdd(XDR *xdrs,
 
 Reply:
 
-    xdrmem_create(&replyXdr,
-                  reply_buf,
-                  MSGSIZE/2,
-                  XDR_ENCODE);
-
-    hdr.opCode = reply;
-
-    if (!xdr_encodeMsg(&replyXdr,
-                       NULL,
-                       &hdr,
-                       xdr_int,
-                       0,
-                       NULL)) {
-        ls_syslog(LOG_ERR, "%s: xdr_encodeMsg() failed");
-        xdr_destroy(&replyXdr);
+    if (sendLSFHeaderNonBlock(chfd, reply) < 0) {
+        ls_syslog(LOG_ERR, "%s: sendLSFHeaderNonBlock() failed", __func__);
         _free_(res.name);
         return -1;
     }
 
-    l = XDR_GETPOS(&replyXdr);
-    if (chanWrite_(chfd, reply_buf, l) <= 0) {
-        ls_syslog(LOG_ERR, "%s: chanWrite_() %d bytes failed", __func__, l);
-        xdr_destroy(&replyXdr);
-        _free_(res.name);
-        return -1;
-    }
-
-    xdr_destroy(&replyXdr);
     _free_(res.name);
 
     return 0;
@@ -3001,11 +2976,7 @@ do_bresRm(XDR *xdrs,
           struct lsfAuth *auth)
 {
     struct batchRes res;
-    XDR replyXdr;
-    struct LSFHeader hdr;
-    char reply_buf[MSGSIZE/2];
     int reply;
-    int l;
 
     res.name = calloc(128, sizeof(char));
 
@@ -3020,34 +2991,12 @@ do_bresRm(XDR *xdrs,
 
 Reply:
 
-    xdrmem_create(&replyXdr,
-                  reply_buf,
-                  MSGSIZE/2,
-                  XDR_ENCODE);
-
-    hdr.opCode = reply;
-
-    if (!xdr_encodeMsg(&replyXdr,
-                       NULL,
-                       &hdr,
-                       xdr_int,
-                       0,
-                       NULL)) {
-        ls_syslog(LOG_ERR, "%s: xdr_encodeMsg() failed");
-        xdr_destroy(&replyXdr);
+    if (sendLSFHeaderNonBlock(chfd, reply) < 0) {
+        ls_syslog(LOG_ERR, "%s: sendLSFHeaderNonBlock() failed", __func__);
         _free_(res.name);
         return -1;
     }
 
-    l = XDR_GETPOS(&replyXdr);
-    if (chanWrite_(chfd, reply_buf, l) <= 0) {
-        ls_syslog(LOG_ERR, "%s: chanWrite_() %d bytes failed", __func__, l);
-        xdr_destroy(&replyXdr);
-        _free_(res.name);
-        return -1;
-    }
-
-    xdr_destroy(&replyXdr);
     _free_(res.name);
 
     return 0;
@@ -3069,4 +3018,40 @@ sendLSFHeader(int ch, int opcode)
     chanWrite_(ch, buf, sizeof(buf));
 
     return 0;
+}
+
+/* sendLSFHeaderNonBlock()
+ */
+static int
+sendLSFHeaderNonBlock(int chfd, int opcode)
+{
+    struct Buffer *buf;
+    XDR xdrs;
+    struct LSFHeader hdr;
+
+    if (chanAllocBuf_(&buf, sizeof(struct LSFHeader)) < 0) {
+        ls_syslog(LOG_ERR, "%s: chanAllocBuf_() failed", __func__);
+        return -1;
+    }
+
+    initLSFHeader_(&hdr);
+    hdr.opCode = opcode;
+
+    xdrmem_create(&xdrs, buf->data, sizeof(struct LSFHeader), XDR_ENCODE);
+
+    if (! xdr_LSFHeader(&xdrs, &hdr)) {
+        ls_syslog(LOG_ERR, "%s: xdr_LSFHeader() failed", __func__);
+        xdr_destroy(&xdrs);
+        return -1;
+    }
+
+    buf->len = XDR_GETPOS(&xdrs);
+
+    if (chanEnqueue_(chfd, buf) < 0) {
+        ls_syslog(LOG_ERR, "%s: chanEnqueue_() failed", __func__);
+        xdr_destroy(&xdrs);
+        return -1;
+    }
+
+    return buf->len;
 }

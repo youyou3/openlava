@@ -8793,6 +8793,8 @@ requeue_job(struct jData *jPtr)
     struct lsfAuth auth;
     int cc;
 
+    /* Make this 120 configurable
+     */
     jPtr->shared->jobBill.beginTime = time(NULL) + 120;
     jPtr->newReason = PEND_JOB_PREEMPTED;
     jPtr->jFlags |= JFLAG_JOB_PREEMPTED;
