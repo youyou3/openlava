@@ -350,6 +350,8 @@ struct jData {
     int numMsg;
     struct lsbMsg **msgs;
     char *run_rusage;   /* "rusage[x=1:y=2||z=3:w=4]" */
+    int pend_need_res;  /* job pends for this resource */
+    int run_use_res;    /* job runs because of this resource */
 };
 
 

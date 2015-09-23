@@ -787,7 +787,8 @@ add_batch_res(struct batchRes *res)
     ls_syslog(LOG_DEBUG, "\
 %s: adding existing resource name %s prev %d current %d", __func__,
               rsv->name, rsv->value, res->value);
-    rsv->value = res->value;
+
+    rsv->value = rsv->value + res->value;
 
     return LSBE_NO_ERROR;
 }

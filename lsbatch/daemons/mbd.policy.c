@@ -1451,6 +1451,10 @@ getJUsable(struct jData *jp, int *numJUsable, int *nProc)
                                    jp);
             if (num < 1) {
                 hReason = resource + PEND_HOST_JOB_RUSAGE;
+                jp->pend_need_res = resource;
+            } else {
+                jp->run_use_res = resource;
+                jp->pend_need_res = 0;
             }
             numSlots = MIN (numSlots, num);
         }
@@ -1569,6 +1573,7 @@ getJUsable(struct jData *jp, int *numJUsable, int *nProc)
         jp->numReasons += numReasons;
         FREEUP(jp->reasonTb);
         jp->reasonTb = reasonTb;
+        jp->run_use_res = 0;
     }
 
     if (*numJUsable == 0) {
