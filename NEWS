@@ -45,6 +45,7 @@ Release notes for OpenLava versions
    value is 15 seconds. Smaller the value and faster is the scheduler
    response to changes in resource values.
 -- Fix MBD job lists bug preventing preemption from working correctly.
+-- Add -rdynamic option to gcc as new compiler (4.8.3)don't set it by default.
 
 3.0.1
 ======
