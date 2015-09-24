@@ -788,7 +788,7 @@ add_batch_res(struct batchRes *res)
 %s: adding existing resource name %s prev %d current %d", __func__,
               rsv->name, rsv->value, res->value);
 
-    rsv->value = rsv->value + res->value;
+    rsv->value = res->value;
 
     return LSBE_NO_ERROR;
 }
@@ -851,7 +851,6 @@ get_mbd_res(struct batchRes *res)
 
         rsv = calloc(1, sizeof(struct batch_res));
         rsv->name = strdup(res->name);
-        rsv->value = res->value;
         ent->hData = rsv;
 
         ls_syslog(LOG_DEBUG, "\
