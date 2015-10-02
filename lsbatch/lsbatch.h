@@ -1553,7 +1553,6 @@ int getMaxSortIntList(struct sortIntList *, int *);
 int getTotalSortIntList(struct sortIntList *);
 int updateJobIdIndexFile (char *, char *, int);
 
-extern int lsb_addbatchres(struct batchRes *);
-extern int lsb_rmbatchres(struct batchRes *);
+extern int lsb_setbatchres(struct batchRes *);
 
 #endif

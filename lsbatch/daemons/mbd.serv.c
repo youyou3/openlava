@@ -2933,10 +2933,10 @@ do_setJobAttr(XDR * xdrs, int s, struct sockaddr_in * from, char *hostName,
     return 0;
 }
 
-/* do_bresAdd()
+/* do_bresSet()
  */
 int
-do_bresAdd(XDR *xdrs,
+do_bresSet(XDR *xdrs,
            int chfd,
            struct sockaddr_in *from,
            struct LSFHeader *reqHeader,
@@ -2954,43 +2954,7 @@ do_bresAdd(XDR *xdrs,
         goto Reply;
     }
 
-    reply = add_batch_res(&res);
-
-Reply:
-
-    if (sendLSFHeaderNonBlock(chfd, reply) < 0) {
-        ls_syslog(LOG_ERR, "%s: sendLSFHeaderNonBlock() failed", __func__);
-        _free_(res.name);
-        return -1;
-    }
-
-    _free_(res.name);
-
-    return 0;
-}
-
-/* do_bresRm()
- */
-int
-do_bresRm(XDR *xdrs,
-          int chfd,
-          struct sockaddr_in *from,
-          struct LSFHeader *reqHeader,
-          struct lsfAuth *auth)
-{
-    struct batchRes res;
-    int reply;
-
-    res.name = calloc(128, sizeof(char));
-
-    if (!xdr_batchRes(xdrs, &res, reqHeader)) {
-        reply = LSBE_XDR;
-        ls_syslog(LOG_ERR, "%s: xdr_runJobReq() failed", __func__);
-        _free_(res.name);
-        goto Reply;
-    }
-
-    reply = rm_batch_res(&res);
+    reply = set_batch_res(&res);
 
 Reply:
 

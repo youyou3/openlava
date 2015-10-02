@@ -770,10 +770,12 @@ get_group_slots(struct gData *gPtr)
     return slots;
 }
 
-/* add_batch_resv()
+/* set_batch_resv()
+ *
+ * Add or remove batch resources
  */
 int
-add_batch_res(struct batchRes *res)
+set_batch_res(struct batchRes *res)
 {
     struct batch_res *rsv;
 
@@ -785,48 +787,24 @@ add_batch_res(struct batchRes *res)
     }
 
     ls_syslog(LOG_DEBUG, "\
-%s: adding existing resource name %s prev %d current %d", __func__,
+%s: setting existing resource name %s prev %d current %d", __func__,
               rsv->name, rsv->value, res->value);
 
-    rsv->value = res->value;
-
-    return LSBE_NO_ERROR;
-}
-
-/* rm_batch_res()
- */
-int
-rm_batch_res(struct batchRes *res)
-{
-    int num;
-    struct batch_res *rsv;
-
-    rsv = get_mbd_res(res);
-    if (rsv == NULL) {
-        ls_syslog(LOG_ERR, "\
-%s: resource %s unknown to MBD", __func__, res->name);
-        return LSBE_BAD_RESOURCE;
-    }
-
-    if (res->value > rsv->value) {
-        ls_syslog(LOG_ERR, "\
-%s: attempt to remove more res %s %d than we have %d", __func__,
-                  rsv->name, res->value, rsv->value);
-        return LSBE_BAD_RESOURCE;
-    }
-
-    /* res->value is the amount to
-     * decreasec
+    /* The broker is always sending a new total.
      */
-    num = rsv->value - res->value;
+    if (rsv->value <= res->value) {
+        rsv->value = res->value;
+    } else {
+        /* Without forcing simply let the job finish
+         */
+        if (rsv->value > res->value) {
+            if (res->options & RES_RM_FORCE)
+                requeue_jobs_by_res(res, (rsv->value - res->value));
+            rsv->value = res->value;
+        }
+    }
 
-    ls_syslog(LOG_DEBUG, "\
-%s: decreasing existing resource %s prev %d new %d options %d",
-              __func__, rsv->name, rsv->value, num, res->options);
-    rsv->value = num;
-
-    if (res->options & RES_RM_FORCE)
-        requeue_jobs_by_res(res, res->value);
+    getLsbResourceInfo();
 
     return LSBE_NO_ERROR;
 }

@@ -1206,16 +1206,11 @@ extern int                  do_migReq(XDR *, int, struct sockaddr_in *, char *,
 extern int                  do_modifyReq (XDR *, int, struct sockaddr_in *,
                                           char *, struct LSFHeader *,
                                           struct lsfAuth *);
-extern int                  do_bresAdd(XDR *,
+extern int                  do_bresSet(XDR *,
                                        int,
                                        struct sockaddr_in *,
                                        struct LSFHeader *,
                                        struct lsfAuth *);
-extern int                  do_bresRm(XDR *,
-                                      int,
-                                      struct sockaddr_in *,
-                                      struct LSFHeader *,
-                                      struct lsfAuth *);
 extern void                 doNewJobReply(struct sbdNode *, int);
 extern void                 doProbeReply(struct sbdNode *, int);
 extern void                 doSignalJobReply(struct sbdNode *sbdPtr, int);
@@ -1408,8 +1403,7 @@ extern int                  checkResources (struct resourceInfoReq *,
 extern struct sharedResource *getResource (char *);
 extern void                 resetSharedResource(void);
 extern void                 updSharedResourceByRUNJob(const struct jData*);
-extern int                  add_batch_res(struct batchRes *);
-extern int                  rm_batch_res(struct batchRes *);
+extern int                  set_batch_res(struct batchRes *);
 extern int                  sharedResourceUpdFactor;
 extern void                 freeSharedResource(void);
 extern void                 newPRMO(char *);

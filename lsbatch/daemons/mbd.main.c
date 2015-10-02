@@ -780,15 +780,10 @@ processClient(struct clientNode *client, int *needFree)
                    do_jobMsgInfo(&xdrs, s, &from, client->fromHost, &reqHdr, &auth),
                    "do_jobMsgInfo()");
             break;
-        case BATCH_ADD_RESV:
+        case BATCH_SET_RESV:
             TIMEIT(0,
-                   do_bresAdd(&xdrs, s, &from, &reqHdr, &auth),
+                   do_bresSet(&xdrs, s, &from, &reqHdr, &auth),
                    "do_bresAdd()");
-            break;
-        case BATCH_RM_RESV:
-            TIMEIT(0,
-                   do_bresRm(&xdrs, s, &from, &reqHdr, &auth),
-                   "do_bresRm()");
             break;
         default:
             errorBack(s, LSBE_PROTOCOL, &from);
@@ -809,13 +804,15 @@ endLoop:
     client->lastTime = now;
     xdr_destroy(&xdrs);
     chanFreeBuf_(buf);
+    /* Do not shutdown async calls the channel
+     * will close it after the message is sent.
+     */
     if ((reqHdr.opCode != PREPARE_FOR_OP
          && reqHdr.opCode != BATCH_STATUS_JOB
          && reqHdr.opCode != BATCH_RUSAGE_JOB
          && reqHdr.opCode != BATCH_STATUS_MSG_ACK
          && reqHdr.opCode != BATCH_STATUS_CHUNK
-         && reqHdr.opCode != BATCH_ADD_RESV
-         && reqHdr.opCode != BATCH_RM_RESV)
+         && reqHdr.opCode != BATCH_SET_RESV)
         || statusReqCC < 0) {
         shutDownClient(client);
         return -1;
@@ -1044,8 +1041,7 @@ authRequest(struct lsfAuth *auth,
           || reqType == BATCH_SET_JOB_ATTR
           || reqType == BATCH_JOB_MSG
           || reqType == BATCH_JOBMSG_INFO
-          || reqType == BATCH_ADD_RESV
-          || reqType == BATCH_RM_RESV))
+          || reqType == BATCH_SET_RESV))
         return LSBE_NO_ERROR;
 
     if (!xdr_lsfAuth(xdrs, auth, reqHdr)) {
