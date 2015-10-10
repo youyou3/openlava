@@ -450,6 +450,9 @@ xdr_parameterInfo(XDR *xdrs,
         if (! xdr_int(xdrs, &paramInfo->maxStreamRecords)
             || ! xdr_int(xdrs, &paramInfo->freshPeriod))
             return false;
+
+	if (! xdr_int(xdrs, &paramInfo->maxSbdConnections))
+	    return false;
     }
 
     return true;

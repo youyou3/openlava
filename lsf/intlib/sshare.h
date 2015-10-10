@@ -26,12 +26,14 @@ struct share_acct {
 };
 
 /* Support data structure equivalent of groupInfoEnt
+ * every change to groupInfoEnt must be added here.
  */
 struct group_acct {
     char *group;
     char *memberList;
     char *user_shares;
     char *group_slots;
+    int max_slots;
 };
 
 /* sshare_make_tree()

@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2014-2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
- * Copyright (C) 2014 David Bigagli
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -77,6 +77,7 @@ struct chanData {
     int chanerr;
     struct Buffer *send;
     struct Buffer *recv;
+    int revents;
 
 };
 
@@ -124,6 +125,8 @@ int chanFreeBuf_(struct Buffer *);
 int chanFreeStashedBuf_(struct Buffer *);
 int chanOpenSock_(int , int);
 int chanSetMode_(int, int);
+extern int chanPoll_(struct chanData **,
+		     struct timeval *);
 
 extern int chanIndex;
 extern int cherrno;

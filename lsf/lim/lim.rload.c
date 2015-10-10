@@ -507,6 +507,9 @@ getusr(void)
             else
                 putEnv("LSF_MASTER", "N");
 
+	    /* Avoid overflow...
+	     */
+	    resbuf[0] = 0;
             for (i = NBUILTINDEX; i < allInfo.nRes; i++) {
 
                 if (allInfo.resTable[i].flags & RESF_EXTERNAL)
@@ -522,18 +525,19 @@ getusr(void)
                     }
 
                     if ((allInfo.resTable[i].flags & RESF_SHARED)
-                        && (!isResourceSharedByHost(myHostPtr, allInfo.resTable[i].name)) )
+                        && (!isResourceSharedByHost(myHostPtr,
+						    allInfo.resTable[i].name)) )
                         continue;
 
                     if (resbuf[0] == '\0')
                         sprintf(resbuf, "%s ", allInfo.resTable[i].name);
                     else {
-                        sprintf(resbuf + strlen(resbuf), "\
-%s ", allInfo.resTable[i].name);
+                        sprintf(resbuf + strlen(resbuf), "%s ",
+				allInfo.resTable[i].name);
                     }
                 }
             }
-            putEnv ("LSF_RESOURCES", resbuf);
+            putEnv("LSF_RESOURCES", resbuf);
 
             if ((fp = lim_popen(myClusterPtr->eLimArgv, "r")) == NULL) {
                 ls_syslog(LOG_ERR, "\

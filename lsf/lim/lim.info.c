@@ -644,11 +644,6 @@ Reply:
 
 }
 
-/* validHosts()
- *
- * An OpenLava server or client hosts are always considered
- * as valid hosts.
- */
 int
 validHosts(char **hostList, int num, char *clName, int options)
 {

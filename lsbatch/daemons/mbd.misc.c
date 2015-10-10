@@ -1285,6 +1285,7 @@ checkParams(struct infoReq *req, struct parameterInfo *reply)
     reply->maxPreemptJobs = mbdParams->maxPreemptJobs;
     reply->maxStreamRecords = mbdParams->maxStreamRecords;
     reply->freshPeriod = freshPeriod;
+    reply->maxSbdConnections = maxSbdConnections;
 }
 
 void

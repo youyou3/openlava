@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2014 - 2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
+ * Copyright (C) 2014 David Bigagli
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -1744,13 +1744,6 @@ readCluster(int checkMode)
     if ((hname = ls_getmyhostname()) == NULL)
         lim_Exit("readCluster/ls_getmyhostname");
 
-#if defined(_OL_VIRT_CLUSTER_)
-    /* Use virtual name if virtual lim
-     */
-    if (machineName)
-        hname = machineName;
-#endif
-
     myHostPtr = findHostbyList(myClusterPtr->hostList, hname);
     if (!myHostPtr) {
         myHostPtr = findHostbyList(myClusterPtr->clientList, hname);
@@ -2473,14 +2466,6 @@ setMyClusterName(void)
 
     if ((hname = ls_getmyhostname()) == NULL)
         lim_Exit("setMyClusterName/ls_getmyhostname failed");
-
-#if defined(_OL_VIRT_CLUSTER_)
-    /* If we are a virtual host use our
-     * virtual name
-     */
-    if (machineName)
-        hname = machineName;
-#endif
 
     ls_syslog(LOG_DEBUG, "%s: searching cluster files ...", __func__);
 

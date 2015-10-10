@@ -93,7 +93,7 @@ findHostbyAddr(struct sockaddr_in *from,
     struct hostent *hp;
     in_addr_t *tPtr;
 
-    if (from->sin_addr.s_addr == ntohl(LOOP_ADDR))
+    if (0 && from->sin_addr.s_addr == ntohl(LOOP_ADDR))
         return myHostPtr;
 
     hPtr = findHNbyAddr(from->sin_addr.s_addr);
@@ -151,8 +151,6 @@ findHNbyAddr(in_addr_t from)
             return hPtr;
     }
 
-    /* OpenLava does not have clients.
-     */
     for (hPtr = clPtr->clientList; hPtr; hPtr = hPtr->nextPtr) {
         if (equivHostAddr(hPtr, from))
             return hPtr;
@@ -533,52 +531,4 @@ lim_system(const char *cmd)
      */
     execl("/bin/sh", "sh", "-c", cmd, NULL);
     exit(-1);
-}
-/* getLIMPort()
- */
-uint16_t
-getLIMPort(struct hostNode *hPtr)
-{
-    char name[MAXHOSTNAMELEN];
-    char *p;
-    uint16_t port;
-
-    p = strchr(hPtr->hostName, '@');
-    if (p == NULL)
-        return lim_port;
-
-    strcpy(name, hPtr->hostName);
-    p = strchr(name, '@');
-    ++p;
-    port = atoi(p);
-
-    return port;
-}
-
-/* getLIMByPort()
- */
-struct hostNode *
-getLIMByPort(struct hostNode *hPtr, struct sockaddr_in *from)
-{
-    int port;
-    char buf[2 * MAXHOSTNAMELEN];
-    struct hostNode *hPtr2;
-
-    port = ntohs(from->sin_port);
-
-    /* Regular update from LIM_PORT
-     */
-    if (port == lim_port)
-        return hPtr;
-
-    sprintf(buf, "%s@%d", hPtr->hostName, port);
-
-    hPtr2 = findHostbyList(myClusterPtr->hostList, buf);
-    if (hPtr2 == NULL) {
-        ls_syslog(LOG_ERR, "\
-%s: ohmygosh virtual node %s is not in cluster list?", __func__, buf);
-        return NULL;
-    }
-
-    return hPtr2;
 }

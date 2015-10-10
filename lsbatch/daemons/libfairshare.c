@@ -90,6 +90,9 @@ fs_init_sched_session(struct qData *qPtr)
 {
     struct tree_ *t;
 
+    if (qPtr->numFairSlots == 0)
+	return 0;
+
     t = qPtr->fsSched->tree;
 
     /* Distribute the tokens all the way

@@ -46,6 +46,13 @@ Release notes for OpenLava versions
    response to changes in resource values.
 -- Fix MBD job lists bug preventing preemption from working correctly.
 -- Add -rdynamic option to gcc as new compiler (4.8.3)don't set it by default.
+-- Fix the limitation of the select() system call which can handle only 1024
+   simultaneous connections. Use poll() instead.
+-- Fix potential buffer overrun in lim when running elim.
+-- Modify bparams and mbatchd to display maxSbdConnections.
+-- Added a new feature MAX_SLOTS in lsb.hosts which is the upper limit
+   for the number of usable slots in a hostgroup. The parameter GROUP_SLOTS
+   must be enabled in lsb.hosts.
 
 3.0.1
 ======

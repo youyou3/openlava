@@ -2090,6 +2090,7 @@ countNumSpecs (struct hData *hData)
         }
     }
 
+
     for (jp = jDataList[FJL]->back; jp != jDataList[FJL]; jp = jp->back) {
         if (jp->hPtr && jp->hPtr[0] == hData) {
             if ( (jp->jStatus & JOB_STAT_DONE) &&
@@ -4420,13 +4421,6 @@ removeJob(LS_LONG_INT jobId)
     struct jgTreeNode *node;
 
     if ((jp = getJobData(jobId)) && jp->nodeType != JGRP_NODE_ARRAY) {
-
-        if (! IS_FINISH(jp->jStatus)) {
-            ls_syslog(LOG_ERR, "\
-%s: cannot remove job %s in state 0x%x stage 0x%x", __func__,
-                      lsb_jobid2str(jp->jobId), jp->jStatus, mSchedStage);
-            return;
-        }
 
         while ((zp = getZombieJob(jp->jobId)) != NULL) {
             closeSbdConnect4ZombieJob(zp);

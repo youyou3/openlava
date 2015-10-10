@@ -1,4 +1,5 @@
-/* $Id: eauth.c 397 2007-11-26 19:04:00Z mblack $
+/*
+ * Copyright (C) 2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
  *
  * This program is free software; you can redistribute it and/or modify
@@ -15,8 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  *
  */
- 
-#include <stdio.h>    
+
+#include <stdio.h>
 #include "../lsf/lib/lproto.h"
 #include "../lsf/lib/lib.h"
 #include "../lsf/intlib/intlibout.h"
@@ -34,7 +35,7 @@ static int getAuth(char *);
 static int printUserName(void);
 static int vauth(char*, char*, int);
 
-int 
+int
 main (int argc, char **argv)
 {
 
@@ -43,12 +44,12 @@ main (int argc, char **argv)
 
 #if defined(DEBUG)
     sprintf(logfile, "%s/eauth.log", LSTMPDIR);
-    
+
     if ((logfp = fopen(logfile, "a+")) == NULL) {
 	perror("fopen failed!");
 	exit(-1);
     }
-#endif 
+#endif
 
     if (argc < 2) {
 #if defined(DEBUG)
@@ -82,7 +83,6 @@ main (int argc, char **argv)
         int uid, gid, client_port, datLen, cc;
 
 	for(;;){
-	    fflush(stderr);
 
             memset(datBuf, 0, sizeof(datBuf));
             memset(lsfUserName, 0, sizeof(lsfUserName));
@@ -102,24 +102,24 @@ main (int argc, char **argv)
 		fprintf(logfp, "fread (%d) failed\n", datLen);
 		fprintf(logfp, "uid=%d, gid=%d, username=%s, client_addr=%s, client_port=%d, datLen=%d, cc=%d, dataBuf=%s\n", uid, gid, lsfUserName, client_addr, client_port, datLen, cc, datBuf);
                 fclose(logfp);
-#endif 
+#endif
                 exit(-1);
             }
-            
+
        	    if(vauth(lsfUserName, datBuf, datLen) == -1) {
     		putchar('0');
 	    } else {
     		putchar('1');
             }
 	    fflush(stdout);
-	} 
-    } 
+	}
+    }
 #if defined(DEBUG)
     fclose(logfp);
 #endif
 
     return 0;
-} 
+}
 
 
 static int
@@ -131,30 +131,30 @@ getAuth(char *inst)
 #endif
 
     return (printUserName());
-} 
+}
 
 
-static int 
+static int
 printUserName(void)
 {
-    char lsfUserName[MAXLSFNAMELEN]; 
+    char lsfUserName[MAXLSFNAMELEN];
     char *encUsername;
     char dataBuff[1024];
 
     if (getUser(lsfUserName, sizeof(lsfUserName)) < 0) {
 #if defined(DEBUG)
         fprintf(logfp, "getUser failed: %s!\n", ls_sysmsg());
-#endif   
-        return -1;   
+#endif
+        return -1;
     }
-        
+
     if ((encUsername = encryptByKey_(NULL, lsfUserName)) == NULL){
 #if defined(DEBUG)
         fprintf(logfp, "encryptByKey_ (NULL, %s) failed!\n",  pw->pw_name);
-        
+
         return -1;
-#endif  
-    }      
+#endif
+    }
     memset(dataBuff,0,sizeof(dataBuff));
     ls_strcat(dataBuff,sizeof(dataBuff),encUsername);
 
@@ -163,14 +163,14 @@ printUserName(void)
 #if defined(DEBUG)
     fprintf(logfp, "username is %s, encrypted username is %s, len=%d\n",
 	    lsfUserName, dataBuff, strlen(dataBuff));
-#endif 
+#endif
 
     fwrite(dataBuff, strlen(dataBuff), 1, stdout);
     return 0;
-} 
+}
 
 static int
-vauth(char *lsfUserName, char *datBuf, int datLen) 
+vauth(char *lsfUserName, char *datBuf, int datLen)
 {
     char* authName;
     char* authPass;
@@ -182,7 +182,7 @@ vauth(char *lsfUserName, char *datBuf, int datLen)
     fprintf(logfp, "LSF_EAUTH_KEY=NULL\n");
 #endif
 
-    
+
     authName = datBuf;
     if ((authPass = (char *)strchr(authName, (int)' ')) != NULL)
         *authPass++ = '\0';
@@ -190,12 +190,12 @@ vauth(char *lsfUserName, char *datBuf, int datLen)
     if ((deUserName = decryptByKey_(NULL, datBuf)) == NULL) {
 #if defined(DEBUG)
         fprintf(logfp, "decryptByKey_(NULL,  %s) failed!\n", datBuf);
-#endif 
+#endif
 	return -1;
     }
     if (strcmp(deUserName, lsfUserName) != 0) {
 #if defined(DEBUG)
-	fprintf(logfp, "decrypt username %s doesn't equal username %s\n", 
+	fprintf(logfp, "decrypt username %s doesn't equal username %s\n",
 	        deUserName, lsfUserName);
         fflush(logfp);
 #endif
@@ -204,7 +204,7 @@ vauth(char *lsfUserName, char *datBuf, int datLen)
 #if defined(DEBUG)
     fprintf(logfp, "decrypt username success, dataBuf is %s, username is %s\n", datBuf, lsfUserName);
     fflush(logfp);
-#endif 
+#endif
     return 0;
 
-} 
+}

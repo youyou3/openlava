@@ -518,8 +518,6 @@ extern int xdr_masterReg(XDR *, struct masterReg *, struct LSFHeader *);
 extern int xdr_statInfo(XDR *, struct statInfo *, struct LSFHeader *);
 extern void clientIO(struct Masks *);
 extern uint16_t getLIMPort(struct hostNode *);
-struct hostNode *getLIMByPort(struct hostNode *,
-                              struct sockaddr_in *);
 
 /* openlava migrating host management
  */

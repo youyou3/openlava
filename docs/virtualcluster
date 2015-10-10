@@ -7,29 +7,18 @@ Begin   Host
 HOSTNAME    model   type  server  r1m  RESOURCES
 lasagna    IntelI5  linux   1      3.5    (cs)
 lasagna@9323    IntelI5  linux   1      3.5    (cs)
-lasagna@9324    IntelI5  linux   1      3.5    (cs)
+#lasagna@9324    IntelI5  linux   1      3.5    (cs)
 End     Host
 
 The virtual hosts must be configured in the hosts file in openlava
 etc directory.
 
-hostname@port where the port must *not* be equal to LSF_LIM_PORT.
-
-->cat hosts 
-192.168.1.6 lasagna
-192.168.1.6 lasagna@9322
-192.168.1.6 lasagna@9323
+hostname@port where the port must not be equal to LSF_LIM_PORT.
 
 Master lim uses the LSF_LIM_PORT, for its master announce to slaves 
 it uses the port that is hardcoded in the hostname e.g. lasagna@9323.
 It sends the master announce to lasagna at UDP port 9323.
 Similarly when it receives statis info or load vector from
 slaves it uses the port in the sockaddr_in structure to find
-which lim is talking to it. The slaves talk to the master using
-the standard LSF_LIM_PORT.
-
-The master lim is started as usual using its full path: /usr/local/3.1/lim
-the slaves are started specifying there virtual name:
-/usr/local/3.1/lim -m lasagna@9322.
-
-
+which lim is talking to it, since all the slaves run on the
+master machine then it has the main hostNode.

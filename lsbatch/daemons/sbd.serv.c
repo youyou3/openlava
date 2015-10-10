@@ -1000,8 +1000,9 @@ do_jobSetup(XDR * xdrs, int chfd, struct LSFHeader * reqHdr)
     }
 
     if (found == FALSE) {
-        ls_syslog(LOG_ERR, "%s: Job <%s> not found",
-                  __func__, lsb_jobid2str(jsetup.jobId));
+        ls_syslog(LOG_ERR, _i18n_msg_get(ls_catd , NL_SETN, 5838,
+                                         "%s: Job <%s> is not found"), /* catgets 5838 */
+                  fname, lsb_jobid2str(jsetup.jobId));
         replyHdrWithRC(LSBE_NO_JOB, chfd, jsetup.jobId);
         return;
     }

@@ -5,6 +5,8 @@
 
 LSF_ENVDIR=@prefix@/etc
 PATH=$PATH:@prefix@/bin
+LSF_SERVERDIR=@prefix@/sbin
+LSF_LIBDIR=@prefix@/lib
 MANPATH=$MANPATH:@prefix@/share/man
 
-export LSF_ENVDIR PATH MANPATH
+export LSF_ENVDIR PATH MANPATH LSF_SERVERDIR LSF_LIBDIR

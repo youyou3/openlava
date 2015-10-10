@@ -857,13 +857,14 @@ struct loadInfoEnt {
 #define GRP_SHARES        0x40
 
 /* Anytime this structure is changed group_acct in
- * sshare must change as well.
+ * sshare.h must change as well.
  */
 struct groupInfoEnt {
     char *group;
     char *memberList;
     char *user_shares;
     char *group_slots;
+    int max_slots;
 };
 
 struct runJobRequest {

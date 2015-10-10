@@ -1,4 +1,5 @@
-/* $Id: lib.rdwr.c 397 2007-11-26 19:04:00Z mblack $
+/*
+ * Copyright (C) 2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
  *
  * This program is free software; you can redistribute it and/or modify
@@ -95,7 +96,7 @@ nb_read_fix(int s, char *buf, int len)
 	}
     }
 
-    return(length);
+    return length;
 }
 
 #define MAXLOOP	3000
@@ -130,9 +131,9 @@ b_read_fix(int s, char *buf, int len)
         return -1;
     }
 
-    return(length);
+    return length;
 }
-
+
 int
 b_write_fix(int s, char *buf, int len)
 {
@@ -155,7 +156,7 @@ b_write_fix(int s, char *buf, int len)
         return -1;
     }
 
-    return (length);
+    return length;
 }
 
 void unblocksig(int sig)
@@ -213,21 +214,33 @@ b_connect_(int s, struct sockaddr *name, int namelen, int timeout)
     return 0;
 }
 
+/* rd_select_()
+ *
+ * Timeout implemented using poll()
+ *
+ */
 int
 rd_select_(int rd, struct timeval *timeout)
 {
     int cc;
-    fd_set rmask;
+    struct pollfd pfd;
+    int t;
 
     if (rd < 0) {
         return -1;
     }
 
     for (;;) {
-	FD_ZERO(&rmask);
-	FD_SET(rd, &rmask);
 
-	cc = select(rd+1, &rmask, (fd_set *)0, (fd_set *)0, timeout);
+	pfd.fd = rd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	t = -1;
+	if (timeout)
+	    t = timeout->tv_sec * 1000 + timeout->tv_usec/1000;
+
+	cc = poll(&pfd, 1, t);
 	if (cc >= 0)
 	    return cc;
 
@@ -342,6 +355,6 @@ nb_read_timeout(int s, char *buf, int len, int timeout)
 	}
     }
 
-    return (length);
+    return length;
 
 }

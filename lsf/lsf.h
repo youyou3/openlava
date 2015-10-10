@@ -44,6 +44,7 @@
 #include <dlfcn.h>
 #include <limits.h>
 #include <pthread.h>
+#include <poll.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/statvfs.h>
@@ -129,6 +130,9 @@ typedef enum {
     USR2
 } lsindx_t;
 
+/* These defines are here for historic reasons.
+ * We should use the defined in stdint.h
+ */
 #if !defined(MAXFLOAT)
 #define MAXFLOAT        3.40282347e+38F
 #endif

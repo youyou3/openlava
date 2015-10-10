@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2011-2015 David Bigagli
+ * Copyright (C) 2011-2013 David Bigagli
+ *
+ * $Id: lim.load.c 397 2007-11-26 19:04:00Z mblack $
  * Copyright (C) 2007 Platform Computing Inc
  *
  * This program is free software; you can redistribute it and/or modify
@@ -258,11 +260,8 @@ sendLoad(void)
         }
 
         toAddr.sin_family = AF_INET;
-        /* Sending load to the master so use
-         * the port defined in lsf.conf
-         * even if virtual host.
-         */
-        toAddr.sin_port   = htons(lim_port);
+        toAddr.sin_port   = lim_port;
+
         memcpy(&toAddr.sin_addr.s_addr,
                &myClusterPtr->masterPtr->addr[0],
                sizeof(in_addr_t));
@@ -389,14 +388,11 @@ rcvLoadVector(XDR *xdrs, struct sockaddr_in *from, struct LSFHeader *hdr)
         return ;
     }
 
-    /* OpenLava got load from a virtual host
-     */
-    hPtr = getLIMByPort(hPtr, from);
-    if (hPtr == NULL) {
+    if (findHostbyList(myClusterPtr->hostList, hPtr->hostName) == NULL) {
         ls_syslog(LOG_ERR, "\
-%s: Received load update from unknown host %s",
-                  __func__, sockAdd2Str_(from));
-        return ;
+%s: Got load from client-only host %s.  Kill LIM on %s",
+                  __func__, sockAdd2Str_(from), sockAdd2Str_(from));
+        return;
     }
 
     if (hPtr->infoValid != TRUE) {

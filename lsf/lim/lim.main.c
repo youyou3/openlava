@@ -104,16 +104,11 @@ extern char *getExtResourcesVal(char *);
  */
 static char reqBuf[MSGSIZE];
 
-/* If this is a virtual host this is
- * its name
- */
-char *machineName;
-
 static void
 usage(void)
 {
     fprintf(stderr, "\
-lim: [-C] [-V] [-h] [-t] [-debug_level] [-d env_dir] [-m machine@port]\n");
+lim: [-C] [-V] [-h] [-t] [-debug_level] [-d env_dir] \n");
 }
 
 /* LIM main()
@@ -159,9 +154,6 @@ main(int argc, char **argv)
                 return 0;
             case 't':
                 showTypeModel = 1;
-                break;
-            case 'm':
-                machineName = strdup(optarg);
                 break;
             case 'h':
             case '?':
@@ -758,16 +750,6 @@ periodic(int kernelPerm)
         ckWtime = now;
     }
 
-    /* OpenLava virtual host res server
-     * always available
-     */
-#if defined(_OL_VIRT_CLUSTER_)
-    if (machineName) {
-        resInactivityCount = 0;
-        myHostPtr->status[0] &= ~(LIM_RESDOWN);
-    }
-#endif
-
     alarmed = 0;
 }
 
@@ -834,7 +816,6 @@ initSock(int checkMode)
 {
     struct sockaddr_in limTcpSockId;
     socklen_t size;
-    uint16_t port;
 
     if (limParams[LSF_LIM_PORT].paramValue == NULL) {
         ls_syslog(LOG_ERR, "\
@@ -852,33 +833,18 @@ initSock(int checkMode)
         return -1;
     }
 
-    port = lim_port;
-#if defined(_OL_VIRT_CLUSTER_)
-    if (machineName) {
-        struct hostNode hPtr;
-        /* A virtual host must bind to its own port
-         * but uses the lim_port to talk to master lim
-         */
-        hPtr.hostName = strdup(machineName);
-        port = getLIMPort(&hPtr);
-        _free_(hPtr.hostName);
-        /* Virtual lim is a compute only one don't
-         * try to take over the master.
-         */
-        limParams[LIM_COMPUTE_ONLY].paramValue = "si";
-    }
-#endif
-
     /* Tell the channel code to set the reuse option
      * for the socket.
      */
-    limSock = chanServSocket_(SOCK_DGRAM, port, -1, CHAN_OP_SOREUSE);
+    limSock = chanServSocket_(SOCK_DGRAM, lim_port, -1, CHAN_OP_SOREUSE);
     if (limSock < 0) {
         ls_syslog(LOG_ERR, "\
 %s: unable to create datagram socket port %d; another LIM running?: %M ",
                   __func__, lim_port);
         return -1;
     }
+
+    lim_port = htons(lim_port);
 
     /* bind to a dynamic port
      */
@@ -972,13 +938,6 @@ startPIM(int argc, char **argv)
     char *pargv[16];
     int i;
     static time_t lastTime = 0;
-
-#if defined(_OL_VIRT_CLUSTER_)
-    /* Dont start pim on a virtual host
-     */
-    if (machineName)
-        return;
-#endif
 
     if (time(NULL) - lastTime < 60 * 2)
         return;

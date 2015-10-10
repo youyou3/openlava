@@ -3,6 +3,8 @@
 #     Sets the C shell user environment for openlava commands
 #
 setenv LSF_ENVDIR @prefix@/etc
+setenv LSF_SERVERDIR @prefix@/sbin
+setenv LSF_LIBDIR @prefix@/lib
 set path = ($path @prefix@/bin)
 if ( ${?MANPATH} ) then
   setenv MANPATH ${MANPATH}:@prefix@/share/man

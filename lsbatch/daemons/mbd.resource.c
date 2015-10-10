@@ -740,8 +740,16 @@ get_group_slots(struct gData *gPtr)
                           hPtr->hStatus);
                 continue;
             }
+	    if (slots + hPtr->maxJobs >= gPtr->max_slots) {
+		slots = gPtr->max_slots;
+		goto via;
+	    }
             slots = slots + hPtr->maxJobs;
         }
+    via:
+	ls_syslog(LOG_DEBUG, "\
+%s: group %s resource %s slots %d", __func__, gPtr->group,
+		  gPtr->group_slots, slots);
         return slots;
     }
 
@@ -759,12 +767,16 @@ get_group_slots(struct gData *gPtr)
             ent = h_nextEnt_(&stab);
             continue;
         }
+	if (slots + hPtr->maxJobs >= gPtr->max_slots) {
+	    slots = gPtr->max_slots;
+	    goto pryc;
+	}
         slots = slots + hPtr->maxJobs;
         ent = h_nextEnt_(&stab);
     }
-
+pryc:
     ls_syslog(LOG_DEBUG, "\
-%s: group %s resource %s slots %d", __func__, gPtr->group,
+%s: 2 group %s resource %s slots %d", __func__, gPtr->group,
               gPtr->group_slots, slots);
 
     return slots;

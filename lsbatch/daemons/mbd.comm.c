@@ -684,21 +684,11 @@ callSBD(char *toHost,
 {
     static char fname[] = "callSBD";
     struct sbdNode *newSbdNode;
-    int sv_port;
 
     if (daemonParams[LSB_MBD_BLOCK_SEND].paramValue == NULL
         && strcmp(caller, "msg_job") != 0)
         callServerFlags |= CALL_SERVER_ENQUEUE_ONLY;
 
-    /* OpenLava virtual host. Save the sbd_port at
-     * sometimes MBD ay talk to non virtual SBD
-     */
-    sv_port = sbd_port;
-#if defined(_OL_VIRT_CLUSTER)
-    if ((sbd_port = getPortByHostName(toHost)) != -1) {
-        sbd_port = htons(port);
-    }
-#endif
     *cc = call_server(toHost,
                       sbd_port,
                       request_buf,
@@ -711,7 +701,6 @@ callSBD(char *toHost,
                       postSndFunc,
                       postSndFuncArg,
                       callServerFlags);
-    sbd_port = sv_port;
     if (*cc < 0) {
         if (*cc == -2) {
             if (lsberrno != LSBE_CONN_REFUSED

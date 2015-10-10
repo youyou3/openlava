@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2014-2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
- * Copyright (C) 2014 David Bigagli
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <poll.h>
 #include "lib.h"
 #include "lproto.h"
 
@@ -44,10 +45,16 @@ extern int CreateSock_(int);
 
 static void doread(int , struct Masks *);
 static void dowrite(int, struct Masks *);
+static void doread2(int);
+static void dowrite2(int);
+
 static struct Buffer *newBuf(void);
 static void enqueueTail_(struct Buffer *, struct Buffer *);
 static void dequeue_(struct Buffer *);
 static int findAFreeChannel(void);
+
+static struct pollfd *poll_array;
+static int *poll_array2chan;
 
 int
 chanInit_(void)
@@ -120,8 +127,7 @@ chanServSocket_(int type, u_short port, int backlog, int options)
         channels[ch].type  = CH_TYPE_UDP;
     else
         channels[ch].type  = CH_TYPE_PASSIVE;
-
-    return ch;
+    return(ch);
 }
 
 int
@@ -745,7 +751,7 @@ chanReadNonBlock_(int chfd, char *buf, int len, int timeout)
         return -1;
     }
 
-    return (nb_read_timeout(channels[chfd].handle, buf, len, timeout));
+    return nb_read_timeout(channels[chfd].handle, buf, len, timeout);
 }
 
 int
@@ -803,7 +809,8 @@ chanRpc_(int chfd, struct Buffer *in, struct Buffer *out,
     }
 
     if (logclass & LC_COMM)
-        ls_syslog(LOG_DEBUG2,"%s: waiting for reply timeout=%d ms", fname,timeout);
+        ls_syslog(LOG_DEBUG2,"\
+%s: waiting for reply timeout=%d ms", fname,timeout);
     if (timeout > 0) {
         timeval.tv_sec = timeout/1000;
         timeval.tv_usec = timeout - timeval.tv_sec*1000;
@@ -1128,4 +1135,296 @@ findAFreeChannel(void)
     channels[i].chanerr = CHANE_NOERR;
 
     return i;
+}
+
+int
+chanPoll_(struct chanData **chans,
+	  struct timeval *t)
+{
+    int i;
+    int nready;
+    int j;
+    int n;
+
+    nready = 0;
+
+    if (poll_array == NULL) {
+	poll_array = calloc(chanMaxSize, sizeof(struct pollfd));
+	if (poll_array == NULL) {
+	    lserrno = LSE_NO_MEM;
+	    return -1;
+	}
+	poll_array2chan = calloc(chanMaxSize, sizeof(int));
+	if (poll_array2chan == NULL) {
+	    FREEUP(poll_array);
+	    lserrno = LSE_NO_MEM;
+	    return -1;
+	}
+    }
+
+    for (i = 0; i < chanMaxSize; i++) {
+	poll_array[i].fd = -1;
+	poll_array[i].events = 0;
+	poll_array[i].revents = 0;
+    }
+
+    n = 0;
+    for (i = 0; i < chanIndex; i++) {
+
+	channels[i].revents = 0;
+
+        if (channels[i].state == CH_INACTIVE)
+            continue;
+
+        if (channels[i].handle == -1)
+            continue;
+
+        if (channels[i].type == CH_TYPE_UDP
+	    && channels[i].state != CH_WAIT)
+            continue;
+
+        if (channels[i].type == CH_TYPE_TCP
+	    && channels[i].state != CH_PRECONN
+	    && !channels[i].recv
+	    && !channels[i].send)
+            continue;
+
+        if (channels[i].state == CH_PRECONN) {
+
+	    poll_array[n].fd = channels[i].handle;
+	    poll_array[n].events |= POLLOUT;
+	    poll_array2chan[n] = i;
+	    ++ n;
+            continue;
+        }
+
+	poll_array[n].fd = channels[i].handle;
+	poll_array[n].events = POLLIN;
+
+        if (channels[i].send
+	    && channels[i].send->forw != channels[i].send) {
+	    poll_array[n].events |= POLLOUT;
+	}
+
+	poll_array2chan[n] = i;
+	++n;
+    }
+
+    nready = poll(poll_array, n, t->tv_sec * 1000);
+    if (nready <= 0) {
+        return nready;
+    }
+
+    for (j = 0; j < n; j++) {
+
+	i = poll_array2chan[j];
+
+	if (channels[i].handle == -1)
+	    continue;
+
+	if (poll_array[j].revents & POLLHUP) {
+	    channels[i].revents = POLLERR;
+            ++n;
+            continue;
+        }
+
+	if (poll_array[j].revents) {
+	    if (logclass & LC_COMM) {
+		ls_syslog(LOG_DEBUG, "\
+%s: max %d nready %d chan %d j %d revents %d", __func__,
+			  chanMaxSize, nready,
+			  i, j, poll_array[j].revents);
+	    }
+	}
+
+        if ((!channels[i].send || !channels[i].recv)
+	    && channels[i].state != CH_PRECONN) {
+
+	    if (poll_array[j].revents & POLLIN) {
+		channels[i].revents |= POLLIN;
+	    }
+
+	    if (poll_array[j].revents & POLLOUT) {
+		channels[i].revents |= POLLOUT;
+	    }
+
+            continue;
+        }
+
+        if (channels[i].state == CH_PRECONN) {
+
+	    if (poll_array[j].revents & POLLOUT) {
+                channels[i].state = CH_CONN;
+                channels[i].send  = newBuf();
+                channels[i].recv  = newBuf();
+		channels[i].revents |= POLLOUT;
+            }
+
+        } else { /* Already connected */
+
+	    if (poll_array[j].revents & POLLIN) {
+
+                doread2(i);
+                /* The socket was set but we didn't read a complete message
+                 * and didn't get an exception (typically EOF)
+                 */
+		if (!(channels[i].revents & POLLIN)
+		    && !(channels[i].revents & POLLERR))
+		    --nready;
+            }
+
+            if (channels[i].send->forw != channels[i].send
+		&& (poll_array[j].revents & POLLOUT)) {
+                dowrite2(i);
+	    }
+	}
+
+	channels[i].revents |= POLLOUT;
+    }
+
+    *chans = channels;
+
+    return nready;
+}
+
+static void
+doread2(int chfd)
+{
+    struct Buffer *rcvbuf;
+    int cc;
+    int hdrlen = sizeof(struct LSFHeader);
+
+    if (channels[chfd].recv->forw == channels[chfd].recv) {
+        /* Allocate buffer */
+        rcvbuf = newBuf();
+        if (!rcvbuf) {
+	    channels[chfd].revents = POLLERR;
+            channels[chfd].chanerr = LSE_MALLOC;
+            return;
+        }
+        enqueueTail_(rcvbuf, channels[chfd].recv);
+    } else
+        rcvbuf = channels[chfd].recv->forw;
+
+    /* Allocate space for the header on the first call */
+    if (!rcvbuf->len) {
+        rcvbuf->data =  malloc(hdrlen);
+        if (!rcvbuf->data) {
+	    channels[chfd].revents = POLLERR;
+            channels[chfd].chanerr = LSE_MALLOC;
+            return;
+        }
+        rcvbuf->len = hdrlen;
+        rcvbuf->pos = 0;
+    }
+
+    /* A message already exists */
+    if(rcvbuf->pos == rcvbuf->len) {
+	channels[chfd].revents = POLLIN;
+        return;
+    }
+
+    errno = 0;
+
+    cc = read(channels[chfd].handle, rcvbuf->data + rcvbuf->pos,
+	      rcvbuf->len - rcvbuf->pos);
+
+    if (cc == 0 && errno == EINTR) {
+
+	ls_syslog(LOG_ERR, "\
+doread: Hmm... looks like read(2) has returned EOF when interrupted by a signal, please report");
+
+
+	return;
+    }
+
+    if (cc <= 0) {
+        if (cc == 0 || BAD_IO_ERR(errno)) {
+	    channels[chfd].revents = POLLERR;
+	    channels[chfd].chanerr = CHANE_CONNRESET;
+        }
+        return;
+    }
+
+    rcvbuf->pos += cc;
+
+    /* We've read in the entire header. Decode it and decide how
+     * big the real message is
+     */
+    if ((rcvbuf->len == hdrlen)
+	&& (rcvbuf->pos == rcvbuf->len )) {
+        XDR xdrs;
+        struct LSFHeader hdr;
+        char *newdata;
+
+        xdrmem_create(&xdrs, rcvbuf->data, hdrlen, XDR_DECODE);
+        if (!xdr_LSFHeader(&xdrs, &hdr)) {
+	    channels[chfd].revents = POLLERR;
+            channels[chfd].chanerr = CHANE_BADHDR;
+            xdr_destroy(&xdrs);
+            return;
+        }
+
+        if (hdr.length) {	/* Message has a body */
+            rcvbuf->len = hdr.length + hdrlen;
+            newdata = realloc(rcvbuf->data, rcvbuf->len);
+            if (!newdata) {
+		channels[chfd].revents = POLLERR;
+                channels[chfd].chanerr = LSE_MALLOC;
+                xdr_destroy(&xdrs);
+                return;
+            }
+            rcvbuf->data = newdata;
+        }
+
+        xdr_destroy(&xdrs);
+    }
+
+    /* Complete message received. We set the bit
+     * instead of assigning revents because the
+     * POLLOUT bit can be set as well by poll()
+     * itself.
+     */
+    if (rcvbuf->pos == rcvbuf->len) {
+	channels[chfd].revents |= POLLIN;
+    }
+
+    return;
+
+} /* doread2() */
+
+/* Cousin of dowrite(). Does the same as dowrite() but sets the
+ * revents member of the chanData structure instead of the fd_set
+ * masks.
+ */
+static void
+dowrite2(int chfd)
+{
+    struct Buffer   *sendbuf;
+    int             cc;
+
+    if (channels[chfd].send->forw == channels[chfd].send)
+        return;
+    else
+        sendbuf = channels[chfd].send->forw;
+
+    cc = write(channels[chfd].handle, sendbuf->data + sendbuf->pos,
+               sendbuf->len - sendbuf->pos);
+
+    if (cc < 0 && BAD_IO_ERR(errno)){
+	channels[chfd].revents = POLLERR;
+        channels[chfd].chanerr = LSE_MSG_SYS;
+        return;
+    }
+
+    sendbuf->pos += cc;
+    if (sendbuf->pos == sendbuf->len) {
+
+        dequeue_(sendbuf);
+        free(sendbuf->data);
+        free(sendbuf);
+    }
+
+    return;
+
 }

@@ -3323,3 +3323,24 @@ after the job is finished (completed or exited).
 .PP
 .PP
 By default, OL_CGROUP_ROOT is not set, and OpenLava does not run jobs with Cgroups. 
+.SH SBD_BIND_CPU
+.BR
+.PP
+.SS Syntax
+.BR
+.PP
+.PP
+\fBSBD_BIND_CPU=\fRy
+.SS Description
+.BR
+.PP
+.PP
+Bind job processes to CPU cores.
+.PP
+It is recommended that the MXJ configuration parameter for each host in the lsb.hosts file is set to the number of cores on the host.
+.PP
+.SS Default
+.BR
+.PP
+.PP
+By default, SBD_BIND_CPU is set to "n", and OpenLava does not bind job processes to CPU cores.

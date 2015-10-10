@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2014-2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
+ * Copyright (C) 2014-2015 David Bigagli
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -31,6 +31,7 @@ extern int sbdLogMask;
 static int msgSbd(LS_LONG_INT, char *, sbdReqType, int (*)());
 extern int jRusageUpdatePeriod;
 
+#define NL_SETN     11
 int
 status_job(mbdReqType reqType,
            struct jobCard *jp,
@@ -146,14 +147,6 @@ status_job(mbdReqType reqType,
 
     xdrmem_create(&xdrs, request_buf, len, XDR_ENCODE);
     initLSFHeader_(&hdr);
-
-#if defined(_OL_VIRT_CLUSTER_)
-    /* OpenLava virtualSBD
-     */
-    if (machineName)
-        hdr.reserved = htons(getPortByHostName(machineName));
-#endif
-
     hdr.opCode = reqType;
 
     if (!xdr_encodeMsg (&xdrs, (char *)&statusReq, &hdr, xdr_statusReq, 0,
@@ -306,14 +299,6 @@ znovu:
     mbdReqtype = BATCH_SLAVE_RESTART;
     xdrmem_create(&xdrs, request_buf, MSGSIZE/8, XDR_ENCODE);
     initLSFHeader_(&hdr);
-
-#if defined(_OL_VIRT_CLUSTER_)
-    /* OpenLava virtualSBD
-     */
-    if (machineName)
-        hdr.reserved = htons(getPortByHostName(machineName));
-#endif
-
     hdr.opCode = mbdReqtype;
 
     if (! xdr_encodeMsg(&xdrs, NULL, &hdr, NULL, 0, NULL)) {
@@ -340,15 +325,6 @@ znovu:
         if (cc >= 0)
             break;
 
-#if defined(_OL_VIRT_CLUSTER_)
-        if (machineName) {
-            ls_syslog(LOG_ERR, "\
-%s: virtual cluster sbd %s MBD is down retrying...",
-                      __func__, machineName);
-            millisleep_(3000);
-            continue;
-        }
-#endif
         /* If we did not get an answer from MBD then
          * either we are booting on the master host
          * so we have to start the master, or the master
@@ -465,7 +441,8 @@ znovu:
 void
 jobSetupStatus(int jStatus, int pendReason, struct jobCard *jp)
 {
-    struct jobSetup jsetup;
+    static char       fname[] = "jobSetupStatus()";
+    struct jobSetup   jsetup;
 
     jsetup.jobId = jp->jobSpecs.jobId;
     jsetup.jStatus = jStatus;
@@ -485,7 +462,7 @@ jobSetupStatus(int jStatus, int pendReason, struct jobCard *jp)
 
     while (msgSbd(jp->jobSpecs.jobId, (char *) &jsetup, SBD_JOB_SETUP,
                   xdr_jobSetup) == -1) {
-        ls_syslog(LOG_DEBUG, "%s: Job %s msgSbd() failed", __func__,
+        ls_syslog(LOG_DEBUG, "%s: Job %s msgSbd() failed", fname,
                   lsb_jobid2str(jp->jobSpecs.jobId));
         millisleep_(10000);
     }
@@ -502,12 +479,14 @@ sbdSyslog(int level, char *msg)
 {
     struct jobSyslog slog;
 
+
     if ((sbdLogMask & LOG_MASK(level)) != 0) {
         slog.logLevel = level;
         STRNCPY(slog.msg, msg, MAXLINELEN);
         msgSbd(-1, (char *) &slog, SBD_SYSLOG, xdr_jobSyslog);
 
     }
+
 }
 
 static int
@@ -543,12 +522,8 @@ msgSbd(LS_LONG_INT jobId, char *req, sbdReqType reqType, int (*xdrFunc)())
             myhostnm = "localhost";
         }
 
-#if defined(_OL_VIRT_CLUSTER_)
-        if (machineName) {
-            myhostnm = machineName;
-            sbd_port = htons(getPortByHostName(machineName));
-        }
-#endif
+
+
         cc = call_server(myhostnm, sbd_port, requestBuf, XDR_GETPOS(&xdrs),
                          &reply_buf, &hdr, 100000, 0, NULL, NULL, NULL, 0);
         if (cc < 0) {
@@ -572,6 +547,50 @@ msgSbd(LS_LONG_INT jobId, char *req, sbdReqType reqType, int (*xdrFunc)())
         exit(-1);
     }
 
+    return 0;
+}
+
+
+int
+msgSupervisor(struct lsbMsg *lsbMsg, struct clientNode *cliPtr)
+{
+    static char fname[] = "msgSupervisor/sbd.comm.c";
+    struct LSFHeader reqHdr;
+    char reqBuf[MSGSIZE*2];
+    int cc;
+    XDR xdrs;
+
+    if (logclass & LC_TRACE)
+        ls_syslog(LOG_DEBUG, "%s: Entering this routine ...", fname);
+
+    if (cliPtr == NULL) {
+        ls_syslog(LOG_ERR, _i18n_msg_get(ls_catd , NL_SETN, 5220,
+                                         "%s: cliPtr is null"), fname); /* catgets 5220 */
+        return -1;
+    }
+
+    initLSFHeader_(&reqHdr);
+    xdrmem_create(&xdrs, reqBuf, sizeof(reqBuf), XDR_ENCODE);
+
+    if (!xdr_encodeMsg(&xdrs, (char *) lsbMsg, &reqHdr, xdr_lsbMsg, 0, NULL)) {
+        if (logclass & LC_COMM)
+            ls_syslog(LOG_ERR, I18N_FUNC_FAIL, fname, "xdr_encodeMsg");
+        xdr_destroy(&xdrs);
+        return -1;
+    }
+
+    if ((cc = b_write_fix(chanSock_(cliPtr->chanfd), reqBuf,
+                          XDR_GETPOS(&xdrs)))
+        != XDR_GETPOS(&xdrs)) {
+        if (logclass & LC_COMM)
+            ls_syslog(LOG_ERR, I18N_FUNC_D_D_FAIL_M, fname, "b_write_fix",
+                      chanSock_(cliPtr->chanfd),
+                      XDR_GETPOS(&xdrs));
+        xdr_destroy(&xdrs);
+        return -1;
+    }
+
+    xdr_destroy(&xdrs);
     return 0;
 }
 

@@ -167,6 +167,7 @@ static void addBinaryAttributes(char *, int *, struct queueInfoEnt *,
 static int parseQFirstHost(char *, int *, char *, int *, char *, char *);
 int chkFirstHost(char *, int* );
 static int set_group_slots(struct groupInfoEnt *, const char *);
+static int set_group_max_slots(struct groupInfoEnt *, const char *);
 
 extern int sigNameToValue_ (char *);
 extern int parseSigActCmd (struct queueInfoEnt *, char *, char *, int *, char *);
@@ -1333,6 +1334,7 @@ do_Groups(struct groupInfoEnt **groups, struct lsConf *conf, char *fname,
         {"GROUP_MEMBER", NULL, 0},
         {"USER_SHARES",  NULL, 0},
         {"GROUP_SLOT", NULL, 0},
+	{"MAX_SLOTS", NULL, 0},
         {NULL, NULL, 0}
     };
     char *linep;
@@ -1556,6 +1558,9 @@ do_Groups(struct groupInfoEnt **groups, struct lsConf *conf, char *fname,
                 set_group_slots(gp, keylist[3].val);
             }
 
+	    if (type == HOST_GRP && keylist[4].val) {
+		set_group_max_slots(gp, keylist[4].val);
+	    }
         }
 
         ls_syslog(LOG_WARNING, I18N_FILE_PREMATURE, __func__, fname, *lineNum);
@@ -6777,6 +6782,28 @@ set_group_slots(struct groupInfoEnt *gp, const char *slot_name)
         return -1;
 
     gp->group_slots = strdup(slot_name);
+
+    return 0;
+}
+
+static int
+set_group_max_slots(struct groupInfoEnt *gp, const char *max_slots)
+{
+    if (gp == NULL
+	|| max_slots == NULL)
+	return -1;
+
+    if (max_slots[0] == 0) {
+	gp->max_slots = INT32_MAX;
+	return 0;
+    }
+
+    gp->max_slots = atoi(max_slots);
+    if (gp->max_slots <= 0) {
+	ls_syslog(LOG_ERR, "\
+%s: invalid max_group_slot %s assuming INT32_MAX", __func__, max_slots);
+	gp->max_slots = INT32_MAX;
+    }
 
     return 0;
 }

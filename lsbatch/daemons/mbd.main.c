@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2011-2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
+ * Copyright (C) 2015 David Bigagli
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -156,7 +156,7 @@ static int authRequest(struct lsfAuth *, XDR *, struct LSFHeader *,
                        struct sockaddr_in *, struct sockaddr_in *,
                        char *, int);
 static int processClient(struct clientNode *, int *);
-static void clientIO(struct Masks *);
+static void clientIO(struct chanData *);
 static int forkOnRequest(mbdReqType);
 static void shutdownSbdConnections(void);
 static void processSbdNode(struct sbdNode *, int);
@@ -170,12 +170,11 @@ extern int do_setJobAttr(XDR *, int, struct sockaddr_in *, char *,
                          struct LSFHeader *, struct lsfAuth *);
 static void preempt(void);
 
+static struct chanData *chans;
+
 int
 main(int argc, char **argv)
 {
-    fd_set readmask;
-    struct Masks sockmask;
-    struct Masks chanmask;
     struct timeval timeout;
     int nready;
     int i;
@@ -390,9 +389,7 @@ main(int argc, char **argv)
 
     for (;;) {
 
-        FD_ZERO(&readmask);
         now = time(NULL);
-
         if ( (now - lastSchedTime >= msleeptime)
              || (now >= nextSchedTime) ) {
             schedule = TRUE;
@@ -416,16 +413,13 @@ main(int argc, char **argv)
             timeout.tv_sec = 0;
         }
 
-        sockmask.rmask = readmask;
-
-        nready = chanSelect_(&sockmask, &chanmask, &timeout);
+        nready = chanPoll_(&chans, &timeout);
         if (nready < 0) {
             if (errno != EINTR)
                 ls_syslog(LOG_ERR, "\
-%s: Ohmygosh.. select() failed %m", __func__);
+%s: Ohmygosh.. poll() failed %m", __func__);
             continue;
         }
-
         if (nready == 0
             || ((now - lastSchedTime) >= 2 * msleeptime)) {
 
@@ -450,11 +444,10 @@ main(int argc, char **argv)
         timeout.tv_sec  = 0;
         timeout.tv_usec = 0;
 
-        if (FD_ISSET(batchSock, &chanmask.rmask)) {
+        if (chans[batchSock].revents & POLLIN)
             acceptConnection(batchSock);
-        }
 
-        clientIO(&chanmask);
+        clientIO(chans);
 
     } /* for (;;) */
 }
@@ -508,13 +501,13 @@ acceptConnection(int socket)
 }
 
 static void
-clientIO(struct Masks *chanmask)
+clientIO(struct chanData *chans)
 {
     struct clientNode *cliPtr;
     struct clientNode *nextClient;
     struct sbdNode *sbdPtr;
     struct sbdNode *nextSbdPtr;
-    int exception;
+    int cc;
 
     if (logclass & LC_TRACE)
         ls_syslog(LOG_DEBUG,"clientIO: Entering...");
@@ -524,35 +517,32 @@ clientIO(struct Masks *chanmask)
          sbdPtr = nextSbdPtr) {
         nextSbdPtr = sbdPtr->forw;
 
-        if (FD_ISSET(sbdPtr->chanfd, &chanmask->rmask)
-            || FD_ISSET(sbdPtr->chanfd, &chanmask->emask)) {
+        cc = sbdPtr->chanfd;
 
-            if (FD_ISSET(sbdPtr->chanfd, &chanmask->emask))
-                exception = TRUE;
-            else
-                exception = FALSE;
-            processSbdNode(sbdPtr, exception);
-        }
+        if (chans[cc].revents & POLLIN)
+            processSbdNode(sbdPtr, false);
+        if (chans[cc].revents & POLLERR)
+            processSbdNode(sbdPtr, true);
     }
 
     for (cliPtr = clientList->forw;
          cliPtr != clientList;
          cliPtr = nextClient) {
         int needFree;
-        nextClient = cliPtr->forw;
 
-        if (FD_ISSET(cliPtr->chanfd, &chanmask->emask)) {
+        nextClient = cliPtr->forw;
+        cc = cliPtr->chanfd;
+
+        if (chans[cc].revents & POLLERR) {
             shutDownClient(cliPtr);
             continue;
         }
         needFree = FALSE;
-        if (FD_ISSET(cliPtr->chanfd, &chanmask->rmask)) {
 
-            int saveChfd;
-            saveChfd = cliPtr->chanfd;
+        if (chans[cc].revents & POLLIN) {
+
             if (processClient(cliPtr, &needFree) == 0) {
 
-                FD_CLR(saveChfd, &chanmask->rmask);
                 if (needFree == TRUE) {
                     offList((struct listEntry *)cliPtr);
                     FREEUP(cliPtr->fromHost);
@@ -560,7 +550,6 @@ clientIO(struct Masks *chanmask)
                 }
             }
         }
-
     }
 }
 

@@ -333,7 +333,6 @@ extern int sbdread_jobstatus (struct jobCard *jp);
 extern int sbdCheckUnreportedStatus();
 extern void exeActCmd(struct jobCard *jp, char *actCmd, char *exitFile);
 extern void exeChkpnt(struct jobCard *jp, int chkFlags, char *exitFile);
-extern int cmp_cpus(const void *, const void *);
 extern void init_cores(void);
 extern int find_free_core(void);
 extern void free_core(int);

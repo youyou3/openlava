@@ -1077,7 +1077,6 @@ do_statusReq(XDR * xdrs, int chfd, struct sockaddr_in * from, int *schedule,
     struct hData *hData;
     struct hostent *hp;
     struct LSFHeader replyHdr;
-    char save_name[MAXHOSTNAMELEN];
 
     hp = Gethostbyaddr_(&from->sin_addr.s_addr,
                         sizeof(in_addr_t),
@@ -1091,16 +1090,6 @@ do_statusReq(XDR * xdrs, int chfd, struct sockaddr_in * from, int *schedule,
         return -1;
     }
 
-    memset(save_name, 0, MAXHOSTNAMELEN);
-
-#if defined(_OL_VIRT_CLUSTER_)
-    /* OpenLava virtual SBD calling
-     */
-    if (reqHdr->reserved != 0) {
-        strcpy(save_name, hp->h_name);
-        getHostNameByPort(reqHdr, hp);
-    }
-#endif
     if (!xdr_statusReq(xdrs, &statusReq, reqHdr)) {
         reply = LSBE_XDR;
         ls_syslog(LOG_ERR, I18N_FUNC_FAIL, __func__, "xdr_statusReq");
@@ -1118,12 +1107,6 @@ do_statusReq(XDR * xdrs, int chfd, struct sockaddr_in * from, int *schedule,
                 reply = LSBE_PROTOCOL;
         }
     }
-
-#if defined (_OL_VIRT_CLUSTER_)
-    if (reqHdr->reserved != 0) {
-        strcpy(hp->h_name, save_name);
-    }
-#endif
 
     xdr_lsffree(xdr_statusReq, (char *) &statusReq, reqHdr);
 
@@ -1227,17 +1210,17 @@ int
 do_restartReq(XDR * xdrs, int chfd, struct sockaddr_in * from,
               struct LSFHeader * reqHdr)
 {
-    char *reply_buf;
-    XDR xdrs2;
-    int buflen;
-    struct LSFHeader replyHdr;
-    int reply;
-    struct sbdPackage sbdPackage;
-    int cc;
+    static char             fname[] = "do_restartReq()";
+    char                   *reply_buf;
+    XDR                     xdrs2;
+    int                     buflen;
+    struct LSFHeader        replyHdr;
+    int                     reply;
+    struct sbdPackage       sbdPackage;
+    int                     cc;
     struct hostent *hp;
-    struct hData *hData;
-    int i;
-    char save_name[MAXHOSTNAMELEN];
+    struct hData           *hData;
+    int                    i;
 
     hp = Gethostbyaddr_(&from->sin_addr.s_addr,
                         sizeof(in_addr_t),
@@ -1250,16 +1233,6 @@ do_restartReq(XDR * xdrs, int chfd, struct sockaddr_in * from,
         return -1;
     }
 
-    memset(save_name, 0, MAXHOSTNAMELEN);
-    /* OpenLava virtual SBD calling
-     */
-#if defined(_OL_VIRT_CLUSTER_)
-    if (reqHdr->reserved != 0) {
-        strcpy(save_name, hp->h_name);
-        getHostNameByPort(reqHdr, hp);
-    }
-#endif
-
     if ((hData = getHostData(hp->h_name)) == NULL) {
         /* For example a migrant host that knows who
          * is the master but MBD did not configure it
@@ -1269,20 +1242,8 @@ do_restartReq(XDR * xdrs, int chfd, struct sockaddr_in * from,
 %s: Got registration request from unknown host %s at %s",
                   __func__, hp->h_name, sockAdd2Str_(from));
         errorBack(chfd, LSBE_BAD_HOST, from);
-#if defined(_OL_VIRT_CLUSTER_)
-        if (reqHdr->reserved != 0) {
-            strcpy(hp->h_name, save_name);
-        }
-#endif
         return -1;
     }
-
-#if defined(_OL_VIRT_CLUSTER_)
-    if (reqHdr->reserved != 0) {
-        strcpy(hp->h_name, save_name);
-    }
-#endif
-
     hStatChange(hData, 0);
 
     if ((sbdPackage.numJobs = countNumSpecs(hData)) > 0)
@@ -1299,7 +1260,7 @@ do_restartReq(XDR * xdrs, int chfd, struct sockaddr_in * from,
     replyHdr.opCode = reply;
     if (!xdr_encodeMsg(&xdrs2, (char *) &sbdPackage, &replyHdr,
                        xdr_sbdPackage, 0, NULL)) {
-        ls_syslog(LOG_ERR, "%s: xdr_sbdPackage() failed %m", __func__);
+        ls_syslog(LOG_ERR, I18N_FUNC_FAIL, fname, "xdr_encodeMsg");
         xdr_destroy(&xdrs2);
         free(reply_buf);
         for (i = 0; i < sbdPackage.nAdmins; i++)
@@ -1313,8 +1274,8 @@ do_restartReq(XDR * xdrs, int chfd, struct sockaddr_in * from,
     }
     cc = XDR_GETPOS(&xdrs2);
     if (chanWrite_(chfd, reply_buf, cc) <= 0)
-        ls_syslog(LOG_ERR, "\
-%s: ohmygosh chanWrite() %dbytes failed", __func__, cc);
+        ls_syslog(LOG_ERR, I18N_FUNC_D_FAIL_M, fname, "chanWrite_",
+                  cc);
 
     free(reply_buf);
     xdr_destroy(&xdrs2);
@@ -1325,8 +1286,8 @@ do_restartReq(XDR * xdrs, int chfd, struct sockaddr_in * from,
         freeJobSpecs(&sbdPackage.jobs[cc]);
     if (sbdPackage.jobs)
         free(sbdPackage.jobs);
-
     return 0;
+
 }
 
 int
@@ -2060,8 +2021,8 @@ initSubmit(int *first, struct submitReq *subReq,
 }
 
 static int
-sendBack(int reply, struct submitReq *submitReq,
-         struct submitMbdReply *submitReply, int chfd)
+sendBack (int reply, struct submitReq *submitReq,
+          struct submitMbdReply *submitReply, int chfd)
 {
     static char             fname[] = "sendBack()";
     char                    reply_buf[MSGSIZE / 2];
@@ -2682,8 +2643,8 @@ do_debugReq(XDR * xdrs, int chfd, struct sockaddr_in * from,
 }
 
 int
-do_resourceInfoReq(XDR *xdrs, int chfd, struct sockaddr_in *from,
-                   struct LSFHeader *reqHdr)
+do_resourceInfoReq (XDR *xdrs, int chfd, struct sockaddr_in *from,
+                    struct LSFHeader *reqHdr)
 {
     static char fname[] = "do_resourceInfoReq";
     XDR                     xdrs2;
@@ -2814,11 +2775,11 @@ freeShareResourceInfoReply (struct  lsbShareResourceInfoReply *reply)
 }
 
 int
-do_runJobReq(XDR *xdrs,
-             int chfd,
-             struct sockaddr_in *from,
-             struct lsfAuth *auth,
-             struct LSFHeader *reqHeader)
+do_runJobReq(XDR*                 xdrs,
+             int                  chfd,
+             struct sockaddr_in*  from,
+             struct lsfAuth *     auth,
+             struct LSFHeader*    reqHeader)
 {
     static char          fname[] = "do_runJobReq()";
     struct runJobRequest runJobRequest;
@@ -2842,7 +2803,9 @@ do_runJobReq(XDR *xdrs,
 
 Reply:
 
+
     xdr_lsffree(xdr_runJobReq, (char *)&runJobRequest, reqHeader);
+
 
     xdrmem_create(&replyXdr,
                   reply_buf,
@@ -2861,6 +2824,7 @@ Reply:
         xdr_destroy(&replyXdr);
         return -1;
     }
+
 
     if (chanWrite_(chfd,
                    reply_buf,

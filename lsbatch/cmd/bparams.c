@@ -199,6 +199,9 @@ The maximum number of finished jobs that can be stored in current events file:\n
         printf("MBD load update interval is:\n");
         printf("     LOAD_UPDATE_INTVL = %d\n\n", reply->freshPeriod);
     }
+
+    printf("Maximum open connections with SBD\n");
+    printf("    MAX_SBD_CONNS = %d\n\n", reply->maxSbdConnections);
 }
 
 

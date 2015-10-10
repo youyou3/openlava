@@ -1,5 +1,4 @@
-/*
- * Copyright (C) 2015 David Bigagli
+/* $Id: daemons.c 397 2007-11-26 19:04:00Z mblack $
  * Copyright (C) 2007 Platform Computing Inc
  *
  * This program is free software; you can redistribute it and/or modify
@@ -99,10 +98,6 @@ init_ServSock(u_short port)
 {
     int ch;
 
-    /* Daemons keep the port number in network order so convert
-     * it here to the host order which is what chanServSocket()
-     * expects in input.
-     */
     ch = chanServSocket_(SOCK_STREAM, ntohs(port), 1024, CHAN_OP_SOREUSE);
     if (ch < 0) {
         ls_syslog(LOG_ERR, "\
@@ -297,37 +292,3 @@ Done:
     return;
 }
 
-#if defined(_OL_VIRT_CLUSTER_)
-/* getPortByHostName()
- */
-int
-getPortByHostName(const char *machName)
-{
-    char name[2 * MAXHOSTNAMELEN];
-    char *p;
-    int port;
-
-    strcpy(name, machName);
-    p = strchr(name, '@');
-    if (p == NULL)
-        return -1;
-
-    ++p;
-    port = atoi(p);
-
-    return port;
-}
-
-/* getHostNameByPort
- */
-char *getHostNameByPort(struct LSFHeader *hdr,
-                        struct hostent *hp)
-{
-    char name[2 * MAXHOSTNAMELEN];
-
-    sprintf(name, "%s@%d", hp->h_name, ntohs(hdr->reserved));
-    strcpy(hp->h_name, name);
-
-    return hp->h_name;
-}
-# endif

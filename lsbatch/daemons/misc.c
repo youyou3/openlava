@@ -118,29 +118,68 @@ die(int sig)
 int
 get_ports(void)
 {
-    if (daemonParams[LSB_MBD_PORT].paramValue != NULL)   {
+
+    static char fname[] = "get_ports";
+    struct servent *sv;
+
+    if (daemonParams[LSB_MBD_PORT].paramValue != NULL)
+    {
         if (!isint_(daemonParams[LSB_MBD_PORT].paramValue)
                || (mbd_port = atoi(daemonParams[LSB_MBD_PORT].paramValue)) <= 0)
-            ls_syslog(LOG_ERR, "\
-%s: LSB_MBD_PORT <%s> in lsf.conf must be a positive number",
-                      __func__, daemonParams[LSB_MBD_PORT].paramValue);
+            ls_syslog(LOG_ERR, _i18n_msg_get(ls_catd , NL_SETN, 8226,
+                "%s: LSB_MBD_PORT <%s> in lsf.conf must be a positive number"), /* catgets 8226 */
+                fname,
+                daemonParams[LSB_MBD_PORT].paramValue);
         else
             mbd_port = htons(mbd_port);
     }
     else if (debug)
         mbd_port = htons(BATCH_MASTER_PORT);
-
-    if (daemonParams[LSB_SBD_PORT].paramValue != NULL) {
+    else
+    {
+        sv = getservbyname(MBATCHD_SERV, "tcp");
+        if (!sv) {
+            ls_syslog(LOG_ERR, _i18n_msg_get(ls_catd , NL_SETN, 8227,
+                "%s: %s service not registered"),
+                fname,
+                MBATCHD_SERV);
+            lsb_merr(_i18n_printf(_i18n_msg_get(ls_catd , NL_SETN, 3208,
+                "%s: %s service not registered"),
+                fname,
+                MBATCHD_SERV));
+            return -1;
+        }
+        mbd_port = sv->s_port;
+    }
+    if (daemonParams[LSB_SBD_PORT].paramValue != NULL)
+    {
         if (!isint_(daemonParams[LSB_SBD_PORT].paramValue)
                  || (sbd_port = atoi(daemonParams[LSB_SBD_PORT].paramValue)) <= 0)
-            ls_syslog(LOG_ERR, "\
-%s: LSB_SBD_PORT <%s> in lsf.conf must be a positive number",
-                __func__, daemonParams[LSB_SBD_PORT].paramValue);
+            ls_syslog(LOG_ERR, _i18n_msg_get(ls_catd , NL_SETN, 8229,
+                "%s: LSB_SBD_PORT <%s> in lsf.conf must be a positive number"), /* catgets 8229 */
+                fname,
+                daemonParams[LSB_SBD_PORT].paramValue);
         else
             sbd_port = htons(sbd_port);
     }
     else if (debug)
         sbd_port = htons(BATCH_SLAVE_PORT);
+    else
+    {
+        sv = getservbyname(SBATCHD_SERV, "tcp");
+        if (!sv) {
+            lsb_merr(_i18n_printf(_i18n_msg_get(ls_catd , NL_SETN, 3208,
+                "%s: %s service not registered"),
+                fname,
+                SBATCHD_SERV));
+            ls_syslog(LOG_ERR, _i18n_msg_get(ls_catd , NL_SETN, 8231,
+                "%s: %s service not registered"), /* catgets 8231 */
+                fname,
+                SBATCHD_SERV);
+            return -1;
+        }
+        sbd_port = sv->s_port;
+    }
 
     return 0;
 }

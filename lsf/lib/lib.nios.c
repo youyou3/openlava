@@ -1,4 +1,5 @@
-/* $Id: lib.nios.c 397 2007-11-26 19:04:00Z mblack $
+/*
+ * Copyright (C) 2015 David Bigagli
  * Copyright (C) 2007 Platform Computing Inc
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,42 +48,42 @@ ls_stdinmode(int onoff)
 
     FD_ZERO(&rmask);
     FD_SET(cli_nios_fd[0], &rmask);
-    timeout.tv_sec = NIOS_TIMEOUT; 
+    timeout.tv_sec = NIOS_TIMEOUT;
     timeout.tv_usec = 0;
 
     if (b_write_fix(cli_nios_fd[0], (char *) &reqHdr, sizeof(reqHdr)) !=
 	sizeof(reqHdr)) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
-    
+
     if ((cc = select(cli_nios_fd[0] + 1, &rmask, 0, 0, &timeout)) <= 0) {
 	if (cc == 0)
 	    lserrno = LSE_TIME_OUT;
         else
 	    lserrno = LSE_SELECT_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (b_read_fix(cli_nios_fd[0], (char *) &replyHdr, sizeof(replyHdr))
 	== -1) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (replyHdr.opCode != REM_ONOFF) {
 	lserrno = LSE_PROTOC_NIOS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
-    sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+    sigprocmask(SIG_SETMASK, &oldMask, NULL);
     return 0;
-} 
+}
 
 int
 ls_donerex(void)
@@ -104,41 +105,41 @@ ls_donerex(void)
 
     FD_ZERO(&rmask);
     FD_SET(cli_nios_fd[0], &rmask);
-    timeout.tv_sec = NIOS_TIMEOUT; 
+    timeout.tv_sec = NIOS_TIMEOUT;
     timeout.tv_usec = 0;
 
     if (b_write_fix(cli_nios_fd[0], (char *)&reqHdr, sizeof(reqHdr)) !=
 	sizeof(reqHdr)) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
-    
+
     if (select(cli_nios_fd[0] + 1, &rmask, 0, 0, &timeout) <= 0) {
 	lserrno = LSE_SELECT_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (b_read_fix(cli_nios_fd[0], (char *) &replyHdr, sizeof(replyHdr))
 	== -1) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (replyHdr.opCode != NIOS_OK) {
 	lserrno = LSE_PROTOC_NIOS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     nios_ok_ = FALSE;
 
-    sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+    sigprocmask(SIG_SETMASK, &oldMask, NULL);
     return 0;
-} 
+}
 
 int
 ls_stoprex(void)
@@ -158,7 +159,7 @@ ls_stoprex(void)
 
     FD_ZERO(&rmask);
     FD_SET(cli_nios_fd[0], &rmask);
-    timeout.tv_sec = NIOS_TIMEOUT; 
+    timeout.tv_sec = NIOS_TIMEOUT;
     timeout.tv_usec = 0;
 
     SET_LSLIB_NIOS_HDR(reqHdr, LIB_NIOS_SUSPEND, 0);
@@ -166,33 +167,33 @@ ls_stoprex(void)
     if (b_write_fix(cli_nios_fd[0], (char *)&reqHdr, sizeof(reqHdr)) !=
 	sizeof(reqHdr)) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
-    
+
     if (select(cli_nios_fd[0] + 1, &rmask, 0, 0, &timeout) <= 0) {
 	lserrno = LSE_SELECT_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (b_read_fix(cli_nios_fd[0], (char *) &replyHdr, sizeof(replyHdr))
 	== -1) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (replyHdr.opCode != NIOS_OK) {
 	lserrno = LSE_PROTOC_NIOS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
-    sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+    sigprocmask(SIG_SETMASK, &oldMask, NULL);
     return 0;
-} 
+}
 
 int
 ls_niossync(int numTasks)
@@ -225,39 +226,39 @@ ls_niossync(int numTasks)
     if (b_write_fix(cli_nios_fd[0], (char *)&reqHdr, sizeof(reqHdr))
 	    != sizeof(reqHdr)) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
-    
+
     if (select(cli_nios_fd[0] + 1, &rmask, 0, 0, &timeout) <= 0) {
 	lserrno = LSE_SELECT_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (b_read_fix(cli_nios_fd[0], (char *) &replyHdr, sizeof(replyHdr))
 	== -1) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
     switch(replyHdr.opCode) {
 	case SYNC_FAIL:
 	    lserrno = LSE_SETPARAM;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
         case SYNC_OK:
 	    break;
         default:
 	    lserrno = LSE_PROTOC_NIOS;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
     }
 
-    sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+    sigprocmask(SIG_SETMASK, &oldMask, NULL);
     return 0;
-} 
+}
 
 int
 ls_setstdout(int on, char *format)
@@ -284,7 +285,7 @@ ls_setstdout(int on, char *format)
     req.r.set_on = on;
     req.r.len = (format == NULL) ? 0 : strlen(format);
     if (req.r.len > 0)
-	req.r.len++;    
+	req.r.len++;
 
     SET_LSLIB_NIOS_HDR(req.hdr, LIB_NIOS_SETSTDOUT, sizeof(req.r) +
 		       req.r.len*sizeof(char));
@@ -292,50 +293,50 @@ ls_setstdout(int on, char *format)
     if (b_write_fix(cli_nios_fd[0], (char *)&req, sizeof(req.hdr) +
 		    sizeof(req.r)) != sizeof(req.hdr) + sizeof(req.r)) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (req.r.len > 0) {
-	
+
 
 	if (b_write_fix(cli_nios_fd[0], (char *)format, req.r.len*sizeof(char))
 	    != req.r.len * sizeof(char)) {
 	    lserrno = LSE_MSG_SYS;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
         }
     }
 
-    
+
     if (select(cli_nios_fd[0] + 1, &rmask, 0, 0, &timeout) <= 0) {
 	lserrno = LSE_SELECT_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (b_read_fix(cli_nios_fd[0], (char *) &replyHdr, sizeof(replyHdr))
 	== -1) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
     switch(replyHdr.opCode) {
 	case STDOUT_FAIL:
 	    lserrno = LSE_SETPARAM;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
         case STDOUT_OK:
 	    break;
         default:
 	    lserrno = LSE_PROTOC_NIOS;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
     }
 
-    sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+    sigprocmask(SIG_SETMASK, &oldMask, NULL);
     return 0;
-} 
+}
 
 int
 ls_setstdin(int on, int *rpidlist, int len)
@@ -357,7 +358,7 @@ ls_setstdin(int on, int *rpidlist, int len)
     if ((rpidlist == NULL && len != 0)
 	|| (len < 0) || (len > NOFILE)) {
 	lserrno = LSE_SETPARAM;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
@@ -374,50 +375,50 @@ ls_setstdin(int on, int *rpidlist, int len)
     if (b_write_fix(cli_nios_fd[0], (char *)&req, sizeof(req.hdr) +
 		    sizeof(req.r)) != sizeof(req.hdr) + sizeof(req.r)) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (rpidlist != NULL && len != 0) {
-	
+
 
 	if (b_write_fix(cli_nios_fd[0], (char *)rpidlist, len*sizeof(int))
 	    != len * sizeof(int)) {
 	    lserrno = LSE_MSG_SYS;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
         }
     }
 
-    
+
     if (select(cli_nios_fd[0] + 1, &rmask, 0, 0, &timeout) <= 0) {
 	lserrno = LSE_SELECT_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (b_read_fix(cli_nios_fd[0], (char *) &replyHdr, sizeof(replyHdr))
 	== -1) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
     switch(replyHdr.opCode) {
 	case STDIN_FAIL:
 	    lserrno = LSE_SETPARAM;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
         case STDIN_OK:
 	    break;
         default:
 	    lserrno = LSE_PROTOC_NIOS;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
     }
 
-    sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+    sigprocmask(SIG_SETMASK, &oldMask, NULL);
     return 0;
-} 
+}
 
 int
 ls_getstdin(int on, int *rpidlist, int maxlen)
@@ -448,29 +449,29 @@ ls_getstdin(int on, int *rpidlist, int maxlen)
 		    sizeof(req.r.set_on)) != sizeof(req.hdr) +
 	sizeof(req.r.set_on)) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
-    
+
     if (select(cli_nios_fd[0] + 1, &rmask, 0, 0, &timeout) <= 0) {
 	lserrno = LSE_SELECT_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
 
     if (b_read_fix(cli_nios_fd[0], (char *) &reply.hdr, sizeof(reply.hdr))
 	== -1) {
 	lserrno = LSE_MSG_SYS;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
     switch(reply.hdr.opCode) {
         case STDIN_OK:
 	    break;
-        default:               
+        default:
 	    lserrno = LSE_PROTOC_NIOS;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	    return -1;
     }
 
@@ -478,18 +479,18 @@ ls_getstdin(int on, int *rpidlist, int maxlen)
         if (b_read_fix(cli_nios_fd[0], (char *)reply.rpidlist, reply.hdr.len)
             != reply.hdr.len) {
             lserrno = LSE_MSG_SYS;
-            sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+            sigprocmask(SIG_SETMASK, &oldMask, NULL);
             return -1;
         }
 
     if (reply.hdr.len <= maxlen*sizeof(int)) {
         memcpy((char *)rpidlist, (char *)reply.rpidlist, reply.hdr.len);
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return(reply.hdr.len/sizeof(int));
     } else {
 	lserrno = LSE_RPIDLISTLEN;
-        sigprocmask(SIG_SETMASK, &oldMask, NULL); 
+        sigprocmask(SIG_SETMASK, &oldMask, NULL);
 	return -1;
     }
-} 
+}
 
