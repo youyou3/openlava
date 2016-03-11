@@ -53,6 +53,7 @@ static int readJobClean(char *, struct jobCleanLog *);
 static int readLogSwitch(char *, struct logSwitchLog *);
 static int readNewJgrp(char *, struct jgrpLog *);
 static int readDelJgrp(char *, struct jgrpLog *);
+static int readPendReason(char *, struct pendReasonLog *);
 static int writeJobNew(FILE *, struct jobNewLog *);
 static int writeJobMod(FILE *, struct jobModLog *);
 static int writeJobStart(FILE *, struct jobStartLog *);
@@ -83,6 +84,8 @@ static int writeJobAttrSet(FILE* , struct jobAttrSetLog*);
 static int writeStreamEnd(FILE *, struct endStream *);
 static int writeNewJgrp(FILE *, struct jgrpLog *);
 static int writeDelJgrp(FILE *, struct jgrpLog *);
+static int writePendReason(FILE *, struct pendReasonLog *);
+
 static int readJobAttrSet(char *, struct jobAttrSetLog* );
 static void freeLogRec(struct eventRec *);
 struct eventRec * lsbGetNextJobEvent(struct eventLogHandle *,
@@ -1804,6 +1807,9 @@ lsb_puteventrec(FILE *log_fp, struct eventRec *logPtr)
 	case EVENT_DEL_JGRP:
 	    etype = "DEL_JGRP";
 	    break;
+        case EVENT_JOB_PEND_REASON:
+            etype = "EVENT_PEND_REASON";
+            break;
         default:
             lsberrno = LSBE_UNKNOWN_EVENT;
             return -1;
@@ -1929,6 +1935,8 @@ lsb_puteventrec(FILE *log_fp, struct eventRec *logPtr)
 	case EVENT_DEL_JGRP:
 	    lsberrno = writeDelJgrp(log_fp, &(logPtr->eventLog.jgrpLog));
 	    break;
+        case EVENT_JOB_PEND_REASON:
+            lsberrno = writePendReason(log_fp, &logPtr->eventLog.pendReason);
     }
 
     if (lsberrno == LSBE_NO_ERROR) {
@@ -2739,6 +2747,19 @@ readDelJgrp(char *line, struct jgrpLog *jgrp)
     return LSBE_NO_ERROR;
 }
 
+/* readPendReason()
+ */
+static int
+readPendReason(char *line, struct pendReasonLog *pr)
+{
+    copyQStr(&line, MAXLSFNAMELEN, 0, pr->jobID);
+    copyQStr(&line, MAXHOSTNAMELEN, 0, pr->host);
+    copyQStr(&line, MAXLSFNAMELEN, 0, pr->reason);
+    copyQStr(&line, MAXLSFNAMELEN, 0, pr->resource);
+    copyQStr(&line, MAXLSFNAMELEN, 0, pr->resReq);
+
+    return LSBE_NO_ERROR;
+}
 
 static int
 writeJobSignal(FILE *log_fp, struct signalLog *signalLog)
@@ -2823,7 +2844,6 @@ writeDelJgrp(FILE *fp, struct jgrpLog *jgrp)
 
     return LSBE_NO_ERROR;
 }
-
 
 static int
 readJobSignal(char *line, struct signalLog *signalLog)
@@ -3343,6 +3363,8 @@ getEventTypeAndKind(char *typeStr, int *eventKind)
 	eventType = EVENT_NEW_JGRP;
     else if (strcmp(typeStr, "DEL_JGRP") == 0)
 	eventType = EVENT_DEL_JGRP;
+    else if (strcmp(typeStr, "EVENT_PEND_REASON") == 0)
+        eventType = EVENT_JOB_PEND_REASON;
     else {
         lsberrno = LSBE_UNKNOWN_EVENT;
         *eventKind = EVENT_NON_JOB_RELATED;
@@ -3538,8 +3560,10 @@ readEventRecord(char *line, struct eventRec *logRec)
 	    lsberrno = readNewJgrp(line, &(logRec->eventLog.jgrpLog));
 	    break;
 	case EVENT_DEL_JGRP:
-	    lsberrno = readDelJgrp(line,&(logRec->eventLog.jgrpLog));
+	    lsberrno = readDelJgrp(line, &(logRec->eventLog.jgrpLog));
 	    break;
+        case EVENT_JOB_PEND_REASON:
+            lsberrno = readPendReason(line, &logRec->eventLog.pendReason);
     }
 
     return;
@@ -4005,4 +4029,30 @@ lsb_getAcctFileTime(char * fileName)
         }
     }
     return lastAcctCreationTime;
+}
+
+/* writePendReason()
+ */
+static int
+writePendReason(FILE *fp, struct pendReasonLog *jp)
+{
+    if (addQStr(fp, jp->jobID))
+        return LSBE_SYS_CALL;
+
+    if (addQStr(fp, jp->host))
+        return LSBE_SYS_CALL;
+
+    if (addQStr(fp, jp->reason))
+        return LSBE_SYS_CALL;
+
+    if (addQStr(fp, jp->resource))
+        return LSBE_SYS_CALL;
+
+    if (addQStr(fp, jp->resReq))
+        return LSBE_SYS_CALL;
+
+    if (fprintf(fp, "\n") < 0)
+        return LSBE_SYS_CALL;
+
+    return LSBE_NO_ERROR;
 }

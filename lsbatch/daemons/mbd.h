@@ -1494,5 +1494,9 @@ extern int tree_size(int *);
 extern int encode_nodes(XDR *, int *, int, struct LSFHeader *);
 extern int can_switch_jgrp(struct jgrpLog *);
 extern int check_job_group(struct jData *, struct lsfAuth *);
+extern int stream_pend_reason(struct jData *,
+                              struct hData *,
+                              int,
+                              int);
 
 #endif /* _MBD_HEADER_ */

@@ -31,6 +31,202 @@ struct msgMap {
 static void userIndexReasons(char *, int, int, struct loadIndexLog *);
 static void getMsgByRes(int, int, char **, struct loadIndexLog *);
 
+static struct msgMap pendMsg[] =
+{
+    /*
+     * Job Related Reasons (001 - 300)
+     */
+    { PEND_JOB_NEW,
+      "New job is waiting for scheduling"},
+    { PEND_JOB_START_TIME,
+      "The job has a specified start time"},
+    { PEND_JOB_DEPEND,
+      "Job dependency condition not satisfied"},
+    { PEND_JOB_DEP_INVALID,
+      "Dependency condition invalid or never satisfied"},
+    { PEND_JOB_MIG,
+      "Migrating job is waiting for rescheduling"},
+    { PEND_JOB_PRE_EXEC,
+      "The job's pre-exec command exited with non-zero status"},
+    { PEND_JOB_NO_FILE,
+      "Unable to access job file"},
+    { PEND_JOB_ENV,
+      "Unable to set job's environment variables"},
+    { PEND_JOB_PATHS,
+      "Unable to determine job's home/working directories"},
+    { PEND_JOB_OPEN_FILES,
+      "Unable to open job's I/O buffers"},
+    { PEND_JOB_EXEC_INIT,
+      "Job execution initialization failed"},
+    { PEND_JOB_RESTART_FILE,
+      "Unable to copy restarting job's checkpoint files"},
+    { PEND_JOB_DELAY_SCHED,
+      "The schedule of the job is postponed for a while"},
+    { PEND_JOB_SWITCH,
+      "Waiting for re-scheduling after switching queue"},
+    {PEND_JOB_DEP_REJECT,
+     "Event is rejected by eeventd due to syntax error"},
+    {PEND_JOB_NO_PASSWD,
+     "Failed to get user password"},
+    {PEND_JOB_MODIFY,
+     "Waiting for re-scheduling after parameters have been changed"},
+    { PEND_SYS_UNABLE,
+      "System is unable to schedule the job" },
+    /*
+     * Queue and System Related Reasons (301 - 599)
+     */
+    { PEND_QUE_INACT,
+      "The queue is inactivated by the administrator"},
+    { PEND_QUE_WINDOW,
+      "The queue is inactivated by its time windows"},
+    { PEND_QUE_JOB_LIMIT,
+      "The queue has reached its job slot limit"},
+    { PEND_QUE_PJOB_LIMIT,
+      "The queue has not enough job slots for the parallel job"},
+    { PEND_QUE_USR_JLIMIT,
+      "User has reached the per-user job slot limit of the queue"},
+    { PEND_QUE_USR_PJLIMIT,
+      "Not enough per-user job slots of the queue for the parallel job"},
+    { PEND_QUE_PRE_FAIL,
+      "The queue's pre-exec command exited with non-zero status"},
+    { PEND_SYS_NOT_READY,
+      "System is not ready for scheduling after reconfiguration"},
+    { PEND_SBD_JOB_REQUEUE,
+      "Requeued job is waiting for rescheduling"},
+    { PEND_JOB_SPREAD_TASK,
+      "Not enough hosts to meet the job's spanning requirement"},
+    { PEND_QUE_SPREAD_TASK,
+      "Not enough hosts to meet the queue's spanning requirement"},
+    { PEND_QUE_WINDOW_WILL_CLOSE,
+      "Job will not finish before queue's run window is closed"},
+    /*
+     * User Related Reasons (601 - 800)
+     */
+    { PEND_USER_JOB_LIMIT,
+      "The user has reached his/her job slot limit"},
+    { PEND_UGRP_JOB_LIMIT,
+      "One of the user's groups has reached its job slot limit"},
+    { PEND_USER_PJOB_LIMIT,
+      "The user has not enough job slots for the parallel job"},
+    {PEND_UGRP_PJOB_LIMIT,
+     "One of user's groups has not enough job slots for the parallel job"},
+    { PEND_USER_RESUME,
+      "Waiting for scheduling after resumed by user"},
+    { PEND_USER_STOP,
+      "The job was suspended by the user while pending"},
+    { PEND_ADMIN_STOP,
+      "The job was suspended by LSF admin or root while pending"},
+    { PEND_NO_MAPPING,
+      "Unable to determine user account for execution"},
+    { PEND_RMT_PERMISSION,
+      "The user has no permission to run the job on remote host/cluster"},
+    /*
+     * NON-EXCLUSIVE PENDING REASONS
+     * A job may still start even though non-exclusive reasons exist.
+     *
+     * Job and Host(sbatchd) Related Reasons (1001 - 1300)
+     */
+    { PEND_HOST_RES_REQ,
+      "Job's resource requirements not satisfied"},
+    { PEND_HOST_NONEXCLUSIVE,
+      "Job's requirement for exclusive execution not satisfied"},
+    { PEND_HOST_JOB_SSUSP,
+      "Higher or equal priority jobs already suspended by system"},
+    { PEND_SBD_GETPID,
+      "Unable to get the PID of the restarting job"},
+    { PEND_SBD_LOCK,
+      "Unable to lock host for exclusively executing the job"},
+    { PEND_SBD_ZOMBIE,
+      "Cleaning up zombie job"},
+    { PEND_SBD_ROOT,
+      "Can't run jobs submitted by root"},
+    { PEND_HOST_WIN_WILL_CLOSE,
+      "Job will not finish on the host before queue's run window is closed"},
+    { PEND_HOST_MISS_DEADLINE,
+      "Job will not finish on the host before job's termination deadline"},
+    /*
+     * Host Related Reasons (1301 - 1600)
+     */
+    { PEND_HOST_DISABLED,
+      "Closed by LSF administrator"},
+    { PEND_HOST_LOCKED,
+      "Host is locked"},
+    { PEND_HOST_LESS_SLOTS,
+      "Not enough job slot(s)"},
+    { PEND_HOST_WINDOW,
+      "Dispatch windows closed"},
+    { PEND_HOST_JOB_LIMIT,
+      "Job slot limit reached"},
+    { PEND_QUE_PROC_JLIMIT,
+      "Queue's per-CPU job slot limit reached"},
+    { PEND_QUE_HOST_JLIMIT,
+      "Queue's per-host job slot limit reached"},
+    { PEND_USER_PROC_JLIMIT,
+      "User's per-CPU job slot limit reached"},
+    { PEND_UGRP_PROC_JLIMIT,
+      "User group's per-CPU job slot limit reached"},
+    { PEND_HOST_USR_JLIMIT,
+      "Host's per-user job slot limit reached"},
+    { PEND_HOST_QUE_MEMB,
+      "Not usable to the queue"},
+    { PEND_HOST_USR_SPEC,
+      "Not specified in job submission"},
+    { PEND_HOST_PART_USER,
+      "User has no access to the host partition"},
+    { PEND_HOST_NO_USER,
+      "There is no such user account"},
+    { PEND_HOST_ACCPT_ONE,
+      "Just started a job recently"},
+    { PEND_LOAD_UNAVAIL,
+      "Load information unavailable"},
+    { PEND_HOST_NO_LIM,
+      "LIM is unreachable now"},
+    { PEND_HOST_QUE_RESREQ,
+      "Queue's resource requirements not satisfied"},
+    { PEND_HOST_SCHED_TYPE,
+      "Not the same type as the submission host"},
+    { PEND_JOB_NO_SPAN,
+      "Not enough processors to meet the job's spanning requirement"},
+    { PEND_QUE_NO_SPAN,
+      "Not enough processors to meet the queue's spanning requirement"},
+    { PEND_HOST_EXCLUSIVE,
+      "Running an exclusive job"},
+    { PEND_HOST_QUE_RUSAGE,
+      "Queue's requirements for resource reservation not satisfied"},
+    { PEND_HOST_JOB_RUSAGE,
+      "Job's requirements for resource reservation not satisfied"},
+/*
+ * sbatchd Related Reasons (1601 - 1900)
+ */
+    { PEND_SBD_UNREACH,
+      "Unable to reach slave batch server"},
+    { PEND_SBD_JOB_QUOTA,
+      "Number of jobs exceeds quota"},
+    { PEND_JOB_START_FAIL,
+      "Failed in talking to server to start the job"},
+    { PEND_JOB_START_UNKNWN,
+      "Failed in receiving the reply from server when starting the job"},
+    { PEND_SBD_NO_MEM,
+      "Unable to allocate memory to run job"},
+    { PEND_SBD_NO_PROCESS,
+      "Unable to fork process to run job"},
+    { PEND_SBD_SOCKETPAIR,
+      "Unable to communicate with job process"},
+    { PEND_SBD_JOB_ACCEPT,
+      "Slave batch server failed to accept job"},
+/*
+ * Load Related Reasons (2001 - 2300)
+ */
+    { PEND_HOST_LOAD,
+      "Load threshold reached"},
+    { PEND_JOB_PREEMPTED,
+      "Preempted job is waiting to be resumed"},
+    { PEND_JOB_REQUEUED,
+      "The job has been requeued"},
+    { 0, NULL}
+};
+
+
 static char *
 getMsg(struct msgMap *msgMap, int number)
 {
@@ -138,199 +334,6 @@ lsb_pendreason(int numReasons, int *rsTb, struct jobInfoHead *jInfoH,
     static char *hostList = NULL;
     static char *retMsg = NULL;
     char *sp;
-    struct msgMap pendMsg[] = {
-        /*
-         * Job Related Reasons (001 - 300)
-         */
-        { PEND_JOB_NEW,
-          "New job is waiting for scheduling"},
-        { PEND_JOB_START_TIME,
-          "The job has a specified start time"},
-        { PEND_JOB_DEPEND,
-          "Job dependency condition not satisfied"},
-        { PEND_JOB_DEP_INVALID,
-          "Dependency condition invalid or never satisfied"},
-        { PEND_JOB_MIG,
-          "Migrating job is waiting for rescheduling"},
-        { PEND_JOB_PRE_EXEC,
-          "The job's pre-exec command exited with non-zero status"},
-        { PEND_JOB_NO_FILE,
-          "Unable to access job file"},
-        { PEND_JOB_ENV,
-          "Unable to set job's environment variables"},
-        { PEND_JOB_PATHS,
-          "Unable to determine job's home/working directories"},
-        { PEND_JOB_OPEN_FILES,
-          "Unable to open job's I/O buffers"},
-        { PEND_JOB_EXEC_INIT,
-          "Job execution initialization failed"},
-        { PEND_JOB_RESTART_FILE,
-          "Unable to copy restarting job's checkpoint files"},
-        { PEND_JOB_DELAY_SCHED,
-          "The schedule of the job is postponed for a while"},
-        { PEND_JOB_SWITCH,
-          "Waiting for re-scheduling after switching queue"},
-        {PEND_JOB_DEP_REJECT,
-         "Event is rejected by eeventd due to syntax error"},
-        {PEND_JOB_NO_PASSWD,
-         "Failed to get user password"},
-        {PEND_JOB_MODIFY,
-         "Waiting for re-scheduling after parameters have been changed"},
-        { PEND_SYS_UNABLE,
-          "System is unable to schedule the job" },
-        /*
-         * Queue and System Related Reasons (301 - 599)
-         */
-        { PEND_QUE_INACT,
-          "The queue is inactivated by the administrator"},
-        { PEND_QUE_WINDOW,
-          "The queue is inactivated by its time windows"},
-        { PEND_QUE_JOB_LIMIT,
-          "The queue has reached its job slot limit"},
-        { PEND_QUE_PJOB_LIMIT,
-          "The queue has not enough job slots for the parallel job"},
-        { PEND_QUE_USR_JLIMIT,
-          "User has reached the per-user job slot limit of the queue"},
-        { PEND_QUE_USR_PJLIMIT,
-          "Not enough per-user job slots of the queue for the parallel job"},
-        { PEND_QUE_PRE_FAIL,
-          "The queue's pre-exec command exited with non-zero status"},
-        { PEND_SYS_NOT_READY,
-          "System is not ready for scheduling after reconfiguration"},
-        { PEND_SBD_JOB_REQUEUE,
-          "Requeued job is waiting for rescheduling"},
-        { PEND_JOB_SPREAD_TASK,
-          "Not enough hosts to meet the job's spanning requirement"},
-        { PEND_QUE_SPREAD_TASK,
-          "Not enough hosts to meet the queue's spanning requirement"},
-        { PEND_QUE_WINDOW_WILL_CLOSE,
-          "Job will not finish before queue's run window is closed"},
-        /*
-         * User Related Reasons (601 - 800)
-         */
-        { PEND_USER_JOB_LIMIT,
-          "The user has reached his/her job slot limit"},
-        { PEND_UGRP_JOB_LIMIT,
-          "One of the user's groups has reached its job slot limit"},
-        { PEND_USER_PJOB_LIMIT,
-          "The user has not enough job slots for the parallel job"},
-        {PEND_UGRP_PJOB_LIMIT,
-         "One of user's groups has not enough job slots for the parallel job"},
-        { PEND_USER_RESUME,
-          "Waiting for scheduling after resumed by user"},
-        { PEND_USER_STOP,
-          "The job was suspended by the user while pending"},
-        { PEND_ADMIN_STOP,
-          "The job was suspended by LSF admin or root while pending"},
-        { PEND_NO_MAPPING,
-          "Unable to determine user account for execution"},
-        { PEND_RMT_PERMISSION,
-          "The user has no permission to run the job on remote host/cluster"},
-        /*
-         * NON-EXCLUSIVE PENDING REASONS
-         * A job may still start even though non-exclusive reasons exist.
-         *
-         * Job and Host(sbatchd) Related Reasons (1001 - 1300)
-         */
-        { PEND_HOST_RES_REQ,
-          "Job's resource requirements not satisfied"},
-        { PEND_HOST_NONEXCLUSIVE,
-          "Job's requirement for exclusive execution not satisfied"},
-        { PEND_HOST_JOB_SSUSP,
-          "Higher or equal priority jobs already suspended by system"},
-        { PEND_SBD_GETPID,
-          "Unable to get the PID of the restarting job"},
-        { PEND_SBD_LOCK,
-          "Unable to lock host for exclusively executing the job"},
-        { PEND_SBD_ZOMBIE,
-          "Cleaning up zombie job"},
-        { PEND_SBD_ROOT,
-          "Can't run jobs submitted by root"},
-        { PEND_HOST_WIN_WILL_CLOSE,
-          "Job will not finish on the host before queue's run window is closed"},
-        { PEND_HOST_MISS_DEADLINE,
-          "Job will not finish on the host before job's termination deadline"},
-        /*
-         * Host Related Reasons (1301 - 1600)
-         */
-        { PEND_HOST_DISABLED,
-          "Closed by LSF administrator"},
-        { PEND_HOST_LOCKED,
-          "Host is locked"},
-        { PEND_HOST_LESS_SLOTS,
-          "Not enough job slot(s)"},
-        { PEND_HOST_WINDOW,
-          "Dispatch windows closed"},
-        { PEND_HOST_JOB_LIMIT,
-          "Job slot limit reached"},
-        { PEND_QUE_PROC_JLIMIT,
-          "Queue's per-CPU job slot limit reached"},
-        { PEND_QUE_HOST_JLIMIT,
-          "Queue's per-host job slot limit reached"},
-        { PEND_USER_PROC_JLIMIT,
-          "User's per-CPU job slot limit reached"},
-        { PEND_UGRP_PROC_JLIMIT,
-          "User group's per-CPU job slot limit reached"},
-        { PEND_HOST_USR_JLIMIT,
-          "Host's per-user job slot limit reached"},
-        { PEND_HOST_QUE_MEMB,
-          "Not usable to the queue"},
-        { PEND_HOST_USR_SPEC,
-          "Not specified in job submission"},
-        { PEND_HOST_PART_USER,
-          "User has no access to the host partition"},
-        { PEND_HOST_NO_USER,
-          "There is no such user account"},
-        { PEND_HOST_ACCPT_ONE,
-          "Just started a job recently"},
-        { PEND_LOAD_UNAVAIL,
-          "Load information unavailable"},
-        { PEND_HOST_NO_LIM,
-          "LIM is unreachable now"},
-        { PEND_HOST_QUE_RESREQ,
-          "Queue's resource requirements not satisfied"},
-        { PEND_HOST_SCHED_TYPE,
-          "Not the same type as the submission host"},
-        { PEND_JOB_NO_SPAN,
-          "Not enough processors to meet the job's spanning requirement"},
-        { PEND_QUE_NO_SPAN,
-          "Not enough processors to meet the queue's spanning requirement"},
-        { PEND_HOST_EXCLUSIVE,
-          "Running an exclusive job"},
-        { PEND_HOST_QUE_RUSAGE,
-          "Queue's requirements for resource reservation not satisfied"},
-        { PEND_HOST_JOB_RUSAGE,
-          "Job's requirements for resource reservation not satisfied"},
-/*
- * sbatchd Related Reasons (1601 - 1900)
- */
-        { PEND_SBD_UNREACH,
-          "Unable to reach slave batch server"},
-        { PEND_SBD_JOB_QUOTA,
-          "Number of jobs exceeds quota"},
-        { PEND_JOB_START_FAIL,
-          "Failed in talking to server to start the job"},
-        { PEND_JOB_START_UNKNWN,
-          "Failed in receiving the reply from server when starting the job"},
-        { PEND_SBD_NO_MEM,
-          "Unable to allocate memory to run job"},
-        { PEND_SBD_NO_PROCESS,
-          "Unable to fork process to run job"},
-        { PEND_SBD_SOCKETPAIR,
-          "Unable to communicate with job process"},
-        { PEND_SBD_JOB_ACCEPT,
-          "Slave batch server failed to accept job"},
-/*
- * Load Related Reasons (2001 - 2300)
- */
-        { PEND_HOST_LOAD,
-          "Load threshold reached"},
-        { PEND_JOB_PREEMPTED,
-          "Preempted job is waiting to be resumed"},
-        { PEND_JOB_REQUEUED,
-          "The job has been requeued"},
-        { 0, NULL}
-    };
 
     if (logclass & (LC_TRACE | LC_SCHED | LC_EXEC))
         ls_syslog(LOG_DEBUG1, "%s: numReasons=%d", fname, numReasons);
@@ -617,4 +620,21 @@ void  getMsgByRes(int resource,
     }
 
     *sp = msgline;
+}
+
+/* lsb_getreasonstr()
+ */
+char *
+lsb_getreasonstr(int pend_reason)
+{
+    int cc;
+
+    cc = 0;
+    while (pendMsg[cc].message != NULL) {
+        if (pend_reason == pendMsg[cc].number)
+            return pendMsg[cc].message;
+        ++cc;
+    }
+
+    return "unknown";
 }

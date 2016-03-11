@@ -5435,3 +5435,41 @@ merge_switch_file(void)
 
     return 0;
 }
+
+/* stream_pend_reason()
+ */
+int
+stream_pend_reason(struct jData *jPtr,
+                   struct hData *hPtr,
+                   int pend_reason,
+                   int resource)
+{
+    struct pendReasonLog *jp;
+    struct eventRec logPtr2;
+
+    if (mbdParams->maxStreamRecords == 0)
+        return 0;
+
+    memset(&logPtr2, 0, sizeof(struct eventRec));
+
+    /* Use the same version as the main protocol.
+     */
+    sprintf(logPtr2.version, "%d", OPENLAVA_XDR_VERSION);
+
+    logPtr2.type = EVENT_JOB_PEND_REASON;
+    logPtr2.eventTime = time(NULL);
+    jp = &logPtr2.eventLog.pendReason;
+
+    strcpy(jp->jobID, lsb_jobid2str(jPtr->jobId));
+    strcpy(jp->host, hPtr->host);
+    strcpy(jp->reason, lsb_getreasonstr(pend_reason));
+    if (resource == -1)
+        strcpy(jp->resource, "");
+    else
+        strcpy(jp->resource, allLsInfo->resTable[resource].name);
+    strcpy(jp->resReq,  jPtr->shared->jobBill.resReq);
+
+    streamEvent(&logPtr2);
+
+    return 0;
+}

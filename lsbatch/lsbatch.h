@@ -165,6 +165,7 @@
 #define    EVENT_STREAM_END       30
 #define    EVENT_NEW_JGRP         31
 #define    EVENT_DEL_JGRP         32
+#define    EVENT_JOB_PEND_REASON  33
 
 /* Job specific reasons
  */
@@ -1323,6 +1324,14 @@ struct jgrpLog {
     time_t submit_time;
 };
 
+struct pendReasonLog {
+    char jobID[MAXLSFNAMELEN];
+    char host[MAXHOSTNAMELEN];
+    char reason[MAXLSFNAMELEN];
+    char resource[MAXLSFNAMELEN];
+    char resReq[MAXLSFNAMELEN];
+};
+
 union  eventLog {
     struct jobNewLog jobNewLog;
     struct jobStartLog jobStartLog;
@@ -1354,6 +1363,7 @@ union  eventLog {
     struct jobAttrSetLog jobAttrSetLog;
     struct endStream eos;
     struct jgrpLog jgrpLog;
+    struct pendReasonLog pendReason;
 };
 
 
@@ -1599,5 +1609,6 @@ extern int lsb_addjgrp(struct job_group *);
 extern int lsb_deljgrp(struct job_group *);
 extern struct jobGroupInfo *lsb_getjgrp(int *);
 extern void free_jobgroupinfo(int, struct jobGroupInfo *);
+extern char *lsb_getreasonstr(int);
 
 #endif

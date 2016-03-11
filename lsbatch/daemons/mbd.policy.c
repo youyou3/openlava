@@ -1379,13 +1379,16 @@ getJUsable(struct jData *jp, int *numJUsable, int *nProc)
         j = num - numHosts;
         for (i = 0; i < j; i++) {
             INC_CNT(PROF_CNT_thirdLoopgetJUsable);
+            stream_pend_reason(jp,
+                               thrown[i],
+                               PEND_HOST_RES_REQ,
+                               -1);
             jUnusable[numReasons] = thrown[i];
             jReasonTb[numReasons++] = PEND_HOST_RES_REQ;
             if (logclass & (LC_SCHED | LC_PEND))
                 ls_syslog(LOG_DEBUG2, "%s: Host %s isn't eligible; reason=%d", fname, thrown[i]->host, jReasonTb[numReasons-1]);
         }
     }
-
 
     FREEUP(thrown);
 
@@ -1443,6 +1446,10 @@ getJUsable(struct jData *jp, int *numJUsable, int *nProc)
                                    &resource,
                                    jp);
             if (num < 1) {
+                stream_pend_reason(jp,
+                                   jUsable[i],
+                                   PEND_HOST_JOB_RUSAGE,
+                                   resource);
                 hReason = resource + PEND_HOST_JOB_RUSAGE;
             }
             numSlots = MIN (numSlots, num);
@@ -1454,6 +1461,10 @@ getJUsable(struct jData *jp, int *numJUsable, int *nProc)
                                    &resource,
                                    jp);
             if (num < 1) {
+                stream_pend_reason(jp,
+                                   jUsable[i],
+                                   PEND_HOST_QUE_RUSAGE,
+                                   resource);
                 hReason = resource + PEND_HOST_QUE_RUSAGE;
             }
             numSlots = MIN (numSlots, num);
@@ -1477,12 +1488,14 @@ getJUsable(struct jData *jp, int *numJUsable, int *nProc)
             }
         }
 
-
-
         if (!hReason && jp->requeMode == RQE_EXCLUDE) {
             for (j = 0; jp->reqHistory[j].host != NULL; j++)
                 if (jUsable[i] == jp->reqHistory[j].host) {
                     hReason = PEND_SBD_JOB_REQUEUE;
+                    stream_pend_reason(jp,
+                                       jUsable[i],
+                                       PEND_SBD_JOB_REQUEUE,
+                                       -1);
                     break;
                 }
         }
